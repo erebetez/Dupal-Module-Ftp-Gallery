@@ -53,11 +53,14 @@ function ftpgallery_block($op = 'list', $delta = 0, $edit = array()) {
     $end_time = $start_time + 86400;
     // 60 * 60 * 24 = 86400 seconds in a day
 
-    $query = "SELECT nid, title, created FROM " .
-             "{node} WHERE created >= '%d' " .
-             " AND created <= '%d'";
+    $limitnum = variable_get("ftpgallery_maxdisp", 3);
 
-    $query_result =  db_query($query, $start_time, $end_time);
+    $query = "SELECT nid, title, created FROM " .
+           "{node} WHERE created >= %d " .
+           "AND created <= %d";
+
+    $query_result = db_query_range($query, $start_time, $end_time, 0, $limitnum);
+
     while ($links = db_fetch_object($query_result)) {
       $block_content .= l($links->title, 'node/'.$links->nid) . '<br />';
     }
@@ -79,4 +82,47 @@ function ftpgallery_block($op = 'list', $delta = 0, $edit = array()) {
   }
 
   return $block;
-} // function onthisdate_block
+} // function ftpgallery_block
+
+
+function ftpgallery_admin() {
+  $form = array();
+
+  $form['ftpgallery_maxdisp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum number of links'),
+    '#default_value' => variable_get('ftpgallery_maxdisp', 3),
+    '#size' => 2,
+    '#maxlength' => 2,
+    '#description' => t("The maximum number of links to display in the block."),
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+}
+
+function ftpgallery_admin_validate($form, &$form_state) {
+  $maxdisp = $form_state['values']['ftpgallery_maxdisp'];
+  if (!is_numeric($maxdisp)) {
+    form_set_error('ftpgallery_maxdisp', t('You must enter an integer for the maximum number of links.'));
+  }
+  else if ($maxdisp <= 0) {
+    form_set_error('ftpgallery_maxdisp', t('Maximum number of links must be positive.'));
+  }
+}
+
+function ftpgallery_menu() {
+
+  $items = array();
+
+  $items['admin/settings/ftpgallery'] = array(
+    'title' => t('FTP Gallery module settings'),
+    'description' => t('FTP Gallery settings page'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ftpgallery_admin'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+   );
+
+  return $items;
+}
