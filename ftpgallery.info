@@ -1,0 +1,4 @@
+name = FTPGallery
+description = Shows pictures from a folder on the server.
+package = FTPGallery
+core = 6.x
