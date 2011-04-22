@@ -85,6 +85,42 @@ function ftpgallery_block($op = 'list', $delta = 0, $edit = array()) {
 } // function ftpgallery_block
 
 
+function ftpgallery_all() {
+  // content variable that will be returned for display
+  $page_content = '';
+
+  // Get today's date
+  $today = getdate();
+
+  // calculate midnight one week ago
+  $start_time = mktime(0, 0, 0, $today['mon'], ($today['mday'] - 7), $today['year']);
+
+  // we want items that occur only on the day in question,
+  // so calculate 1 day
+  $end_time = $start_time + 86400;
+  // 60 * 60 * 24 = 86400 seconds in a day
+
+  $query = "SELECT nid, title, created FROM " .
+           "{node} WHERE created >= '%d' " .
+           " AND created <= '%d'";
+
+  // get the links (no range limit here)
+  $queryResult =  db_query($query, $start_time, $end_time);
+  while ($links = db_fetch_object($queryResult)) {
+    $page_content .= l($links->title, 'node/'.$links->nid) . '<br />';
+  }
+
+  // check to see if there was any content before
+  // returning the page
+  if ($page_content == '') {
+    // no content from a week ago, let the user know
+    $page_content = "No events occurred on this site on this date in history.";
+  }
+
+  return $page_content;
+}
+
+
 function ftpgallery_admin() {
   $form = array();
 
@@ -123,6 +159,14 @@ function ftpgallery_menu() {
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
    );
+
+  //this is added for this current tutorial.
+  $items['ftpgallery'] = array(
+    'title' => 'Ftp Gallery',
+    'page callback' => 'ftpgallery_all',
+    'access arguments' => array('access ftpgallery content'),
+    'type' => MENU_CALLBACK
+  );
 
   return $items;
 }
