@@ -12,161 +12,140 @@ function ftpgallery_help($path, $arg) {
   }
 }
 
+/**
+* Implementation of hook_node_info().
+*/
+function ftpgallery_node_info() {
+  return array(
+    'ftpgallery' => array(
+      'name' => t('FTP-Gallery'),
+      'module' => 'ftpgallery',
+      'description' => "Creates a Gallery out of a folder.",
+    )
+  );
+} 
 
 /**
-* Valid permissions for this module
-* @return array An array of valid permissions for the ftpgallery module
+* Implementation of hook_perm().
 */
 function ftpgallery_perm() {
-  return array('access ftp gallery content');
-}
-
+  return array('create ftpgallery', 'edit own ftpgallery');
+} 
 
 /**
-* Implementation of hook_block().
-* @param string $op one of "list", "view", "save" and "configure"
-* @param integer $delta code to identify the block
-* @param array $edit only for "save" operation
+* Implementation of hook_access().
 */
-function ftpgallery_block($op = 'list', $delta = 0, $edit = array()) { 
+function ftpgallery_access($op, $node, $account) {
 
-  if ($op == "list") {
-    // Generate listing of blocks from this module, for the admin/block page
-    $block[0]["info"] = t('FTP Gallery');
+  if ($op == 'create') {
+    // Only users with permission to do so may create this node type.
+    return user_access('create ftpgallery', $account);
   }
-  else if ($op == 'view') {
 
-    // Generate our block content
-
-    // content variable that will be returned for display
-    $block_content = '';
-
-    // Get today's date
-    $today = getdate();
-
-    // calculate midnight one week ago
-    $start_time = mktime(0, 0, 0,$today['mon'],
-                               ($today['mday'] - 7), $today['year']);
-
-    // we want items that occur only on the day in question, so
-    //calculate 1 day
-    $end_time = $start_time + 86400;
-    // 60 * 60 * 24 = 86400 seconds in a day
-
-    $limitnum = variable_get("ftpgallery_maxdisp", 3);
-
-    $query = "SELECT nid, title, created FROM " .
-           "{node} WHERE created >= %d " .
-           "AND created <= %d";
-
-    $query_result = db_query_range($query, $start_time, $end_time, 0, $limitnum);
-
-    while ($links = db_fetch_object($query_result)) {
-      $block_content .= l($links->title, 'node/'.$links->nid) . '<br />';
-    }
-
-    // Fill in the subject of our block which is the same whether or not
-    // the block has any real content
-    $block['subject'] = 'Gallery Block';
-
-    // check to see if there was any content before returning
-    //  the block view
-    if ($block_content == '') {  
-       // no content from a week ago
-       $block['content'] = 'Sorry No Content';
-    }
-    else {
-      // set up the block
-      $block['content'] = $block_content;
+  // Users who create a node may edit or delete it later, assuming they have the
+  // necessary permissions.
+  if ($op == 'update' || $op == 'delete') {
+    if (user_access('edit own ftpgallery', $account) && ($account->uid == $node->uid)) {
+      return TRUE;
     }
   }
+} 
 
-  return $block;
-} // function ftpgallery_block
+// node-type/ftpgallery
 
+// function ftpgallery_menu() {
+// 
+//   $items = array();
+// 
+//   $items['node/add'] = array(
+//     'title' => 'FTP Gallery',
+//     'description' => 'Create a FTP Gallery',
+//     'page callback' => 'drupal_get_form',
+//     'page arguments' => array('ftpgallery'),
+//     'access arguments' => array('create ftpgallery'),
+//     'type' => MENU_NORMAL_ITEM,
+//    );
+// 
+//   return $items;
+// }
 
-function ftpgallery_all() {
-  // content variable that will be returned for display
-  $page_content = '';
-
-  // Get today's date
-  $today = getdate();
-
-  // calculate midnight one week ago
-  $start_time = mktime(0, 0, 0, $today['mon'], ($today['mday'] - 7), $today['year']);
-
-  // we want items that occur only on the day in question,
-  // so calculate 1 day
-  $end_time = $start_time + 86400;
-  // 60 * 60 * 24 = 86400 seconds in a day
-
-  $query = "SELECT nid, title, created FROM " .
-           "{node} WHERE created >= '%d' " .
-           " AND created <= '%d'";
-
-  // get the links (no range limit here)
-  $queryResult =  db_query($query, $start_time, $end_time);
-  while ($links = db_fetch_object($queryResult)) {
-    $page_content .= l($links->title, 'node/'.$links->nid) . '<br />';
-  }
-
-  // check to see if there was any content before
-  // returning the page
-  if ($page_content == '') {
-    // no content from a week ago, let the user know
-    $page_content = "No events occurred on this site on this date in history.";
-  }
-
-  return $page_content;
-}
-
-
-function ftpgallery_admin() {
-  $form = array();
-
-  $form['ftpgallery_maxdisp'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Maximum number of links'),
-    '#default_value' => variable_get('ftpgallery_maxdisp', 3),
-    '#size' => 2,
-    '#maxlength' => 2,
-    '#description' => t("The maximum number of links to display in the block."),
-    '#required' => TRUE,
+function ftpgallery_schema() {
+  $schema['ftpgallery'] = array(
+    'fields' => array(
+      'vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ), 
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ), 
+      'color' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('vid', 'nid'),
   );
 
-  return system_settings_form($form);
+  return $schema;
 }
 
-function ftpgallery_admin_validate($form, &$form_state) {
-  $maxdisp = $form_state['values']['ftpgallery_maxdisp'];
-  if (!is_numeric($maxdisp)) {
-    form_set_error('ftpgallery_maxdisp', t('You must enter an integer for the maximum number of links.'));
+/**
+* Implementation of hook_form().
+*/
+function ftpgallery_form(&$node, $form_state) {
+  $type = node_get_types('type', $node);
+
+  if ($type->has_title) {
+    $form['title'] = array(
+      '#type' => 'textfield', 
+      '#title' => check_plain($type->title_label), 
+      '#required' => TRUE, 
+      '#default_value' => $node->title, 
+      '#weight' => -5,
+    );
   }
-  else if ($maxdisp <= 0) {
-    form_set_error('ftpgallery_maxdisp', t('Maximum number of links must be positive.'));
+
+  if ($type->has_body) {
+    // In Drupal 6, we use node_body_field() to get the body and filter
+    // elements. This replaces the old textarea + filter_form() method of
+    // setting this up. It will also ensure the teaser splitter gets set up
+    // properly.
+    $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
   }
-}
 
-function ftpgallery_menu() {
-
-  $items = array();
-
-  $items['admin/settings/ftpgallery'] = array(
-    'title' => t('FTP Gallery module settings'),
-    'description' => t('FTP Gallery settings page'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('ftpgallery_admin'),
-    'access arguments' => array('access administration pages'),
-    'type' => MENU_NORMAL_ITEM,
-   );
-
-  //this is added for this current tutorial.
-  $items['ftpgallery'] = array(
-    'title' => 'Ftp Gallery',
-    'page callback' => 'ftpgallery_all',
-    'access arguments' => array('access ftpgallery content'),
-    'type' => MENU_CALLBACK
+  // Now we define the form elements specific to our node type.
+  $form['color'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Color'), 
+    '#default_value' => isset($node->color) ? $node->color : '',
   );
 
-  return $items;
+  return $form;
+}
+
+function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
+  $node = node_prepare($node, $teaser);
+  $node->content['myfield'] = array(
+    '#value' => theme('ftpgallery_order_info', $node), 
+    '#weight' => 1,
+  );
+
+  return $node;
+}
+
+function ftpgallery_insert($node) {
+  db_query("INSERT INTO {ftpgallery} (vid, nid, color) VALUES (%d, %d, '%s')", $node->vid, $node->nid, $node->color);
+}
+
+function ftpgallery_delete($node) {
+  // Notice that we're matching all revision, by using the node's nid.
+  db_query('DELETE FROM {ftpgallery} WHERE nid = %d', $node->nid);
 }
