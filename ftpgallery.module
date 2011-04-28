@@ -49,52 +49,6 @@ function ftpgallery_access($op, $node, $account) {
       return TRUE;
     }
   }
-} 
-
-// node-type/ftpgallery
-
-// function ftpgallery_menu() {
-// 
-//   $items = array();
-// 
-//   $items['node/add'] = array(
-//     'title' => 'FTP Gallery',
-//     'description' => 'Create a FTP Gallery',
-//     'page callback' => 'drupal_get_form',
-//     'page arguments' => array('ftpgallery'),
-//     'access arguments' => array('create ftpgallery'),
-//     'type' => MENU_NORMAL_ITEM,
-//    );
-// 
-//   return $items;
-// }
-
-function ftpgallery_schema() {
-  $schema['ftpgallery'] = array(
-    'fields' => array(
-      'vid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ), 
-      'nid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ), 
-      'color' => array(
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-    ),
-    'primary key' => array('vid', 'nid'),
-  );
-
-  return $schema;
 }
 
 /**
@@ -122,30 +76,35 @@ function ftpgallery_form(&$node, $form_state) {
   }
 
   // Now we define the form elements specific to our node type.
-  $form['color'] = array(
+  $form['url'] = array(
     '#type' => 'textfield', 
-    '#title' => t('Color'), 
-    '#default_value' => isset($node->color) ? $node->color : '',
+    '#title' => t('Url to Folder'), 
+    '#default_value' => isset($node->url) ? $node->url : '',
   );
 
   return $form;
 }
 
-function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
-  $node = node_prepare($node, $teaser);
-  $node->content['myfield'] = array(
-    '#value' => theme('ftpgallery_order_info', $node), 
-    '#weight' => 1,
-  );
-
-  return $node;
+function ftpgallery_load($node) {
+  $additions = db_fetch_object(db_query('SELECT galleryurl, FROM {ftpgallery_url} WHERE vid = %d', $node->vid));
+  return $additions;
 }
 
+// function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
+//   $node = node_prepare($node, $teaser);
+//   $node->content['myfield'] = array(
+//     '#value' => theme('ftpgallery_order_info', $node), 
+//     '#weight' => 1,
+//   );
+// 
+//   return $node;
+// }
+
 function ftpgallery_insert($node) {
-  db_query("INSERT INTO {ftpgallery} (vid, nid, color) VALUES (%d, %d, '%s')", $node->vid, $node->nid, $node->color);
+  db_query("INSERT INTO {ftpgallery_url} (vid, nid, galleryurl) VALUES (%d, %d, '%s')", $node->vid, $node->nid, $node->url);
 }
 
 function ftpgallery_delete($node) {
   // Notice that we're matching all revision, by using the node's nid.
-  db_query('DELETE FROM {ftpgallery} WHERE nid = %d', $node->nid);
+  db_query('DELETE FROM {ftpgallery_url} WHERE nid = %d', $node->nid);
 }
