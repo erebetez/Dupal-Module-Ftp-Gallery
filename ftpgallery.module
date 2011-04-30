@@ -217,16 +217,18 @@ function theme_ftpgallery_gallery($node) {
   $output = '<div class="ftpgallery_gallery">';
 
   // we only display pictures with a thumbnail.
-  for ($i = 0; $i <= count($node->gallery['thumbnails']); $i++) {
+  for ($i = 0; $i < count($node->gallery['thumbnails']); $i++) {
     $output .= '<a href="';
     $output .= $node->galleryurl . "/" . $node->gallery['pictures'][$i];
     $output .= '" rel="lightbox[';
     $output .= $node->nid;
-    $output .= ']"><img class="thumbnail" " src="';
+//     $output .= ']"><img class="thumbnail" " src="';
+    $output .= ']"><img style="margin: 0 5px 5px 0;" " src="';
     $output .= $node->galleryurl . "/" . $node->gallery['thumbnails'][$i];
     $output .= '" width="120" height="120"></a>';
   }
 
+ // TODO remove Debug stuff.
   $output .= "<br>";
 
   foreach($node->gallery['thumbnails'] as $thumbnail){
