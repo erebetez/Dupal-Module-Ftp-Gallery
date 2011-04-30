@@ -138,18 +138,9 @@ function ftpgallery_load($node) {
 
 
 function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
-
-  if( !_ftpgallery_galleryPathExist($node) ){
-    $node = _ftpgallery_formatError($node, t('Gallery path does not exist.'));
-  }
+  $node = node_prepare($node, $teaser);
 
   $node = _ftpgallery_parseGalleryFolder($node);
-
-  if( empty($node->gallery) ){
-     $node =  _ftpgallery_formatError($node, t('Pictures not valid. No Gallery could be generated.'));
-  }
-
-  $node = node_prepare($node, $teaser);
 
   if( !empty($node->error) ){
     $node->content['error'] = array(
@@ -158,10 +149,10 @@ function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
     );
   }
 
-    $node->content['gallery'] = array(
-      '#value' => theme('ftpgallery_gallery', $node),
-      '#weight' => 1,
-    );
+  $node->content['gallery'] = array(
+    '#value' => theme('ftpgallery_gallery', $node),
+    '#weight' => 2,
+  );
 
   return $node;
 }
@@ -170,6 +161,10 @@ function _ftpgallery_parseGalleryFolder($node) {
   $node->gallery = array();
   $thumbnails = array();
   $pictures = array();
+
+  if( !_ftpgallery_galleryPathExist($node) ){
+     return _ftpgallery_formatError($node, t('Gallery path does not exist.'));
+  }
 
   // get files in the gallery folder
   $fileArray = scandir($node->galleryurl);
