@@ -79,62 +79,26 @@ function ftpgallery_form(&$node, $form_state) {
   // Now we define the form elements specific to our node type.
   $form['galleryurl'] = array(
     '#type' => 'textfield', 
-    '#title' => t('Url to Folder'), 
+    '#title' => t('Path to Folder'), 
+    '#required' => TRUE,
     '#default_value' => isset($node->galleryurl) ? $node->galleryurl : '',
   );
 
   return $form;
 }
 
-function ftpgallery_load($node) {
-  $additions = db_fetch_object(db_query('SELECT galleryurl FROM {ftpgallery} WHERE vid = %d', $node->vid));
-
-  $node->imageList = array();
-  $node->imageList[0] = "Do Stuff.";
-
-  return $additions;
+// validate path
+function ftpgallery_validate($node, &$form_state) {
+  if (!_ftpgallery_galleryPathExist($node)) {
+    form_set_error('galleryurl', t('The path for the gallery does not exist. Please use a valid path.'));
+  }
 }
 
-function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
-  $node = node_prepare($node, $teaser);
-  $node->content['path'] = array(
-    '#value' => theme('ftpgallery_path', $node),
-    '#weight' => 1,
-  );
-  $node->content['test'] = array(
-    '#value' => theme('ftpgallery_gallery', $node),
-    '#weight' => 2,
-  );
-
-  return $node;
+function _ftpgallery_galleryPathExist($node) {
+  return file_exists( getcwd() . "/" . $node->galleryurl );
 }
 
-function ftpgallery_theme() {
-  return array(
-    'ftpgallery_path' => array(
-      'arguments' => array('node'),
-    ),
-    'ftpgallery_gallery' => array(
-      'arguments' => array('node'),
-    ),
-  );
-}
-
-function theme_ftpgallery_path($node) {
-  $output = '<div class="ftpgallery_path">';
-  $output .= t('Path to Pictures %path', array('%path' => check_plain($node->galleryurl)));
-  $output .= '</div>';
-  return $output;
-}
-
-function theme_ftpgallery_gallery($node) {
-  $output = '<div class="ftpgallery_gallery">';
-  $output .= t('Test Array %value', array('%value' => check_plain($node->imageList[0])));
-  $output .= '</div>';
-  return $output;
-}
-
-
+// --- Database hooks ---
 
 function ftpgallery_insert($node) {
   db_query("INSERT INTO {ftpgallery} (vid, nid, galleryurl) VALUES (%d, %d, '%s')", $node->vid, $node->nid, $node->galleryurl);
@@ -163,4 +127,132 @@ function ftpgallery_nodeapi(&$node, $op, $teaser, $page) {
       db_query('DELETE FROM {ftpgallery} WHERE vid = %d', $node->vid);
       break;
   }
+}
+
+
+// --- Load and Display ---
+
+function ftpgallery_load($node) {
+  return db_fetch_object(db_query('SELECT galleryurl FROM {ftpgallery} WHERE vid = %d', $node->vid));
+}
+
+
+function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
+
+  if( !_ftpgallery_galleryPathExist($node) ){
+    $node = _ftpgallery_formatError($node, t('Gallery path does not exist.'));
+  }
+
+  $node = _ftpgallery_parseGalleryFolder($node);
+
+  if( empty($node->gallery) ){
+     $node =  _ftpgallery_formatError($node, t('Pictures not valid. No Gallery could be generated.'));
+  }
+
+  $node = node_prepare($node, $teaser);
+
+  if( !empty($node->error) ){
+    $node->content['error'] = array(
+      '#value' => theme('ftpgallery_error', $node->error),
+      '#weight' => 1,
+    );
+  }
+
+    $node->content['gallery'] = array(
+      '#value' => theme('ftpgallery_gallery', $node),
+      '#weight' => 1,
+    );
+
+  return $node;
+}
+
+function _ftpgallery_parseGalleryFolder($node) {
+  $node->gallery = array();
+  $thumbnails = array();
+  $pictures = array();
+
+  // get files in the gallery folder
+  $fileArray = scandir($node->galleryurl);
+
+  foreach($fileArray as $file) {
+    if( _ftpgallery_isValidFileType($file) ) {
+      if( _ftpgallery_isThunbnail($file) ) {
+        array_push($thumbnails, $file);
+      } else {
+        array_push($pictures, $file);
+      }
+    }
+  }
+
+  if( count($thumbnails) != count($pictures) ){
+     $node = _ftpgallery_formatError($node, t('Not equal number of thumbnails and pictures.'));
+  }
+
+  $node->gallery['thumbnails'] = $thumbnails;
+  $node->gallery['pictures'] = $pictures;
+  return $node;
+}
+
+function _ftpgallery_isValidFileType($file){
+  // TODO make a settingspage
+  $allowedFileTypes = Array('jpg', 'jpeg', 'png');
+
+  $fileNameEnding = end(explode(".", $file));
+
+  foreach($allowedFileTypes as $ending){
+    if( $fileNameEnding == $ending ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function _ftpgallery_isThunbnail($file){
+  // TODO make a settingspage
+  $thumbnailPrefix = "thumb";
+
+  $filePrefix = reset(explode("_", $file));
+
+  return ( $filePrefix == $thumbnailPrefix );
+}
+
+function theme_ftpgallery_gallery($node) {
+  $output = '<div class="ftpgallery_gallery">';
+
+  // we only display pictures with a thumbnail.
+  foreach($node->gallery['thumbnails'] as $thumbnail){
+     $output .= getcwd() . "/" . $thumbnail . "<br>";
+  }
+
+  foreach($node->gallery['pictures'] as $picture){
+     $output .= getcwd() . "/" . $picture . "<br>";
+  }
+
+  $output .= '</div>';
+  return $output;
+}
+
+// error handling
+function _ftpgallery_formatError($node, $errorText){
+  $node->error .= $errorText . "<br>";
+  return $node;
+}
+
+function theme_ftpgallery_error($text) {
+  $output = '<div class="ftpgallery_error">';
+  $output .= t('Error: %text', array('%text' => $text));
+  $output .= '</div>';
+  return $output;
+}
+
+// Tell Drupal about the theme functions
+function ftpgallery_theme() {
+  return array(
+    'ftpgallery_error' => array(
+      'arguments' => array('text'),
+    ),
+    'ftpgallery_gallery' => array(
+      'arguments' => array('node'),
+    ),
+  );
 }
