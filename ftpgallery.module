@@ -212,15 +212,29 @@ function _ftpgallery_isThunbnail($file){
 }
 
 function theme_ftpgallery_gallery($node) {
+// <a href="http://www.jugendundnaturoberwallis.ch/files/gallery/2011_skiiwiekend/img_1733_jpeg.jpeg" rel="lightbox[2011_skiiwiekend]"><img class="photo" src="http://www.jugendundnaturoberwallis.ch/files/gallery/2011_skiiwiekend/thumb_img_1733_jpeg.jpeg" width="120" height="120"></a>
+
   $output = '<div class="ftpgallery_gallery">';
 
   // we only display pictures with a thumbnail.
+  for ($i = 0; $i <= count($node->gallery['thumbnails']); $i++) {
+    $output .= '<a href="';
+    $output .= $node->galleryurl . "/" . $node->gallery['pictures'][$i];
+    $output .= '" rel="lightbox[';
+    $output .= $node->nid;
+    $output .= ']"><img class="thumbnail" " src="';
+    $output .= $node->galleryurl . "/" . $node->gallery['thumbnails'][$i];
+    $output .= '" width="120" height="120"></a>';
+  }
+
+  $output .= "<br>";
+
   foreach($node->gallery['thumbnails'] as $thumbnail){
-     $output .= getcwd() . "/" . $thumbnail . "<br>";
+     $output .= $node->galleryurl . "/" . $thumbnail . "<br>";
   }
 
   foreach($node->gallery['pictures'] as $picture){
-     $output .= getcwd() . "/" . $picture . "<br>";
+     $output .= $node->galleryurl . "/" . $picture . "<br>";
   }
 
   $output .= '</div>';
@@ -235,7 +249,7 @@ function _ftpgallery_formatError($node, $errorText){
 
 function theme_ftpgallery_error($text) {
   $output = '<div class="ftpgallery_error">';
-  $output .= t('Error: %text', array('%text' => $text));
+  $output .= t('Error: %text', array('%text' => check_plain($text)));
   $output .= '</div>';
   return $output;
 }
