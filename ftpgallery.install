@@ -4,18 +4,18 @@
  * Implementation of hook_install().
  */
 function ftpgallery_install() {
-  drupal_install_schema('ftpgallery_url');
+  drupal_install_schema('ftpgallery');
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function ftpgallery_uninstall() {
-  drupal_uninstall_schema('ftpgallery_url');
+  drupal_uninstall_schema('ftpgallery');
 }
 
 function ftpgallery_schema() {
-  $schema['ftpgallery_url'] = array(
+  $schema['ftpgallery'] = array(
     'fields' => array(
       'vid'      => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'nid'      => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
@@ -26,3 +26,9 @@ function ftpgallery_schema() {
 
   return $schema;
 } 
+
+// function mymodule_update_6000() {
+//   $ret = array();
+//   db_add_field($ret, 'ftpgallery', 'newcol', array('type' => 'int'));
+//   return $ret;
+// }

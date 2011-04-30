@@ -86,7 +86,7 @@ function ftpgallery_form(&$node, $form_state) {
 }
 
 function ftpgallery_load($node) {
-  $additions = db_fetch_object(db_query('SELECT galleryurl, FROM {ftpgallery_url} WHERE vid = %d', $node->vid));
+  $additions = db_fetch_object(db_query('SELECT galleryurl, FROM {ftpgallery} WHERE vid = %d', $node->vid));
   return $additions;
 }
 
@@ -101,10 +101,10 @@ function ftpgallery_load($node) {
 // }
 
 function ftpgallery_insert($node) {
-  db_query("INSERT INTO {ftpgallery_url} (vid, nid, galleryurl) VALUES (%d, %d, '%s')", $node->vid, $node->nid, $node->url);
+  db_query("INSERT INTO {ftpgallery} (vid, nid, galleryurl) VALUES (%d, %d, '%s')", $node->vid, $node->nid, $node->url);
 }
 
 function ftpgallery_delete($node) {
   // Notice that we're matching all revision, by using the node's nid.
-  db_query('DELETE FROM {ftpgallery_url} WHERE nid = %d', $node->nid);
+  db_query('DELETE FROM {ftpgallery} WHERE nid = %d', $node->nid);
 }
