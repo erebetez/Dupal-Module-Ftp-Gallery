@@ -89,18 +89,51 @@ function ftpgallery_form(&$node, $form_state) {
 function ftpgallery_load($node) {
   $additions = db_fetch_object(db_query('SELECT galleryurl FROM {ftpgallery} WHERE vid = %d', $node->vid));
 
+  $node->imageList = array();
+  $node->imageList[0] = "Do Stuff.";
+
   return $additions;
 }
 
 function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
   $node = node_prepare($node, $teaser);
-  $node->content['galleryurl'] = array(
-    '#value' => theme('ftpgallery_order_info', $node),
+  $node->content['path'] = array(
+    '#value' => theme('ftpgallery_path', $node),
     '#weight' => 1,
+  );
+  $node->content['test'] = array(
+    '#value' => theme('ftpgallery_gallery', $node),
+    '#weight' => 2,
   );
 
   return $node;
 }
+
+function ftpgallery_theme() {
+  return array(
+    'ftpgallery_path' => array(
+      'arguments' => array('node'),
+    ),
+    'ftpgallery_gallery' => array(
+      'arguments' => array('node'),
+    ),
+  );
+}
+
+function theme_ftpgallery_path($node) {
+  $output = '<div class="ftpgallery_path">';
+  $output .= t('Path to Pictures %path', array('%path' => check_plain($node->galleryurl)));
+  $output .= '</div>';
+  return $output;
+}
+
+function theme_ftpgallery_gallery($node) {
+  $output = '<div class="ftpgallery_gallery">';
+  $output .= t('Test Array %value', array('%value' => check_plain($node->imageList[0])));
+  $output .= '</div>';
+  return $output;
+}
+
 
 
 function ftpgallery_insert($node) {
