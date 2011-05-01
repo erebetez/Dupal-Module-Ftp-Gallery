@@ -19,6 +19,14 @@ function ftpgallery_admin() {
     '#required' => TRUE,
   );
 
+  $form['ftpgallery_gallerybasedir'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Base dir for all FTP gallerys'),
+    '#default_value' => variable_get('ftpgallery_gallerybasedir', 'files'),
+    '#description' => t("The base dir relativ to the drupal installation with all the gallerys"),
+    '#required' => TRUE,
+  );
+
   return system_settings_form($form);
 }
 
@@ -27,8 +35,13 @@ function ftpgallery_admin_validate($form, &$form_state) {
   $inputstring = _ftpgallery_formatFileTypeString($inputstring);
   $form_state['values']['ftpgallery_allowedfiletypes'] = $inputstring;
 
-  $form_state['values']['ftpgallery_thumbprefix'] = check_plain($form_state['values']['ftpgallery_thumbprefix']);
-//     form_set_error('ftpgallery_allowedfiletypes', t('text'));
+  $form_state['values']['ftpgallery_thumbprefix']
+    = check_plain($form_state['values']['ftpgallery_thumbprefix']);
+
+  $baseDir = $form_state['values']['ftpgallery_gallerybasedir'];
+  if( !file_exists( getcwd() . "/" . $baseDir ) ){
+    form_set_error('ftpgallery_gallerybasedir', t('The given directory doesn\'t exist on the server.'));
+  }
 }
 
 function _ftpgallery_formatFileTypeString($inputstring){
