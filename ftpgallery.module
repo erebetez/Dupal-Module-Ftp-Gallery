@@ -123,8 +123,8 @@ function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
     '#weight' => 1,
   );
 
-  $errors = form_get_errors();
-  if( !empty($errors) ){
+  $errors = form_set_error();
+  if( !empty($errors) && $page ){
     $node->content['debug'] = array(
       '#value' => theme('ftpgallery_debug', $node),
       '#weight' => 2,

@@ -6,7 +6,7 @@ function _ftpgallery_formatError($errorText, $warning = FALSE){
   $output .= ": ";
   $output .= check_plain($errorText);
 
-  form_set_error($errorText, $errorText);
+  form_set_error($output, $output);
 }
 
 function theme_ftpgallery_debug($node) {
