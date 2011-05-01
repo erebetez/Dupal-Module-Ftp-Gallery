@@ -1,8 +1,8 @@
 <?php
 
 require_once ( dirname(__FILE__) . '/ftpgallery.database.inc');
+require_once ( dirname(__FILE__) . '/ftpgallery.settings.inc');
 require_once ( dirname(__FILE__) . '/ftpgallery.errorhandling.inc');
-
 
 function ftpgallery_help($path, $arg) {
   switch ($path) {
@@ -24,8 +24,12 @@ function ftpgallery_node_info() {
 } 
 
 function ftpgallery_perm() {
-  return array('create ftpgallery', 'edit own ftpgallery');
-} 
+  return array(
+    'create ftpgallery',
+    'edit own ftpgallery',
+    'access administration pages'
+  );
+}
 
 function ftpgallery_access($op, $node, $account) {
 
@@ -43,6 +47,21 @@ function ftpgallery_access($op, $node, $account) {
   }
 }
 
+function ftpgallery_menu() {
+
+  $items = array();
+
+  $items['admin/settings/ftpgallery'] = array(
+    'title' => t('FTP Gallery module settings'),
+    'description' => t('Settings for the FTP Gallery module.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ftpgallery_admin'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+   );
+
+  return $items;
+}
 
 // --- The Form ---
 function ftpgallery_form(&$node, $form_state) {
@@ -134,7 +153,11 @@ function _ftpgallery_parseGalleryFolder($node) {
   }
 
   if( count($thumbnails) != count($pictures) ){
-     $node = _ftpgallery_formatError($node, t('Not equal number of thumbnails and pictures.'), true);
+    $node = _ftpgallery_formatError($node, t('Not equal number of thumbnails and pictures.'), true);
+  }
+
+  if( count($thumbnails) == 0 ){
+    $node = _ftpgallery_formatError($node, t('No matching pictures in the Folder.'), true);
   }
 
   $node->gallery['thumbnails'] = $thumbnails;
@@ -143,10 +166,10 @@ function _ftpgallery_parseGalleryFolder($node) {
 }
 
 function _ftpgallery_isValidFileType($file){
-  // TODO make a settingspage
-  $allowedFileTypes = Array('jpg', 'jpeg', 'png');
+  $allowedFileTypes = variable_get('ftpgallery_allowedfiletypes', 'jpg jpeg png');
+  $allowedFileTypes = explode(" ", $allowedFileTypes);
 
-  $fileNameEnding = end(explode(".", $file));
+  $fileNameEnding = strtolower(end(explode(".", $file)));
 
   foreach($allowedFileTypes as $ending){
     if( $fileNameEnding == $ending ) {
