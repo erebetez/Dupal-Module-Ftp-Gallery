@@ -142,17 +142,17 @@ function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
 
   $node = _ftpgallery_parseGalleryFolder($node);
 
+  $node->content['gallery'] = array(
+    '#value' => theme('ftpgallery_gallery', $node),
+    '#weight' => 1,
+  );
+
   if( !empty($node->error) ){
     $node->content['error'] = array(
       '#value' => theme('ftpgallery_error', $node),
       '#weight' => 2,
     );
   }
-
-  $node->content['gallery'] = array(
-    '#value' => theme('ftpgallery_gallery', $node),
-    '#weight' => 1,
-  );
 
   return $node;
 }
@@ -269,12 +269,16 @@ function _ftpgallery_debug($node){
 
   $output .= $node->galleryurl . "<br />";
 
-  foreach($node->gallery['thumbnails'] as $thumbnail){
-     $output .= $node->galleryurl . "/" . $thumbnail . "<br />";
+  if( count($node->gallery['thumbnails']) > 0 ){
+    foreach($node->gallery['thumbnails'] as $thumbnail){
+      $output .= $node->galleryurl . "/" . $thumbnail . "<br />";
+    }
   }
 
-  foreach($node->gallery['pictures'] as $picture){
-     $output .= $node->galleryurl . "/" . $picture . "<br />";
+  if( count($node->gallery['pictures']) > 0 ){
+    foreach($node->gallery['pictures'] as $picture){
+      $output .= $node->galleryurl . "/" . $picture . "<br />";
+    }
   }
   return $output;
 }
