@@ -141,7 +141,7 @@ function _ftpgallery_getGalleryPictures($node){
   }
 
   if( count($node->gallery['thumbnails']) == 0 ){
-    $node = _ftpgallery_formatError($node, t('No matching pictures in the Folder.'), true);
+    $node = _ftpgallery_formatError($node, t('No matching thumbnails in the Folder.'), true);
   }
 
   return $node;
@@ -185,12 +185,11 @@ function _ftpgallery_isValidFileType($file){
 }
 
 function _ftpgallery_isThunbnail($file){
-  // TODO make a settingspage
-  $thumbnailPrefix = "thumb";
+  $thumbnailPrefix = variable_get('ftpgallery_thumbprefix', 'thumb_');
 
-  $filePrefix = reset(explode("_", $file));
+  $regexp = '/^' . $thumbnailPrefix . '/';
 
-  return ( $filePrefix == $thumbnailPrefix );
+  return ( preg_match( $regexp, $file ) > 0 );
 }
 
 function theme_ftpgallery_gallery($node) {
