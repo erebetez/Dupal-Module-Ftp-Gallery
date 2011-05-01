@@ -222,10 +222,16 @@ function theme_ftpgallery_gallery($node) {
     $output .= $node->galleryurl . "/" . $node->gallery['pictures'][$i];
     $output .= '" rel="lightbox[';
     $output .= $node->nid;
-//     $output .= ']"><img class="thumbnail" " src="';
-    $output .= ']"><img style="margin: 0 5px 5px 0;" " src="';
-    $output .= $node->galleryurl . "/" . $node->gallery['thumbnails'][$i];
-    $output .= '" width="120" height="120"></a>';
+    $output .= ']">';
+
+    $url = $node->galleryurl . "/" . $node->gallery['thumbnails'][$i];
+    $alt = $node->gallery['thumbnails'][$i];
+    $title = $node->gallery['thumbnails'][$i];
+    $attributes = 'width="120" height="120"';
+
+    $output .=  theme('image', $url, $alt, $title, $attributes, FALSE);
+
+    $output .= '</a>';
   }
 
  // TODO remove Debug stuff.
