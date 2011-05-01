@@ -84,7 +84,6 @@ function ftpgallery_form(&$node, $form_state) {
     $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
   }
 
-  // Now we define the form elements specific to our node type.
   $form['galleryurl'] = array(
     '#type' => 'textfield', 
     '#title' => t('Path to Folder'), 
@@ -124,7 +123,7 @@ function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
     '#weight' => 1,
   );
 
-  $errors = form_set_error();
+  $errors = form_get_errors();
   if( !empty($errors) ){
     $node->content['debug'] = array(
       '#value' => theme('ftpgallery_debug', $node),

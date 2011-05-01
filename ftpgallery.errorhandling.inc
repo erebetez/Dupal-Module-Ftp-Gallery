@@ -11,8 +11,15 @@ function _ftpgallery_formatError($errorText, $warning = FALSE){
 
 function theme_ftpgallery_debug($node) {
   $output = '<div class="ftpgallery_error">';
-  $output = "Debug info: <br />";
+  $output .= "Debug info: <br />";
 
+  $output .= "Thumbnail prefix: ";
+  $output .= variable_get('ftpgallery_thumbprefix', 'thumb_') . "<br />";
+
+  $output .= "Allowed file types: ";
+  $output .= variable_get('ftpgallery_allowedfiletypes', 'jpg jpeg png') . "<br />";
+
+  $output .= "Gallery path: ";
   $output .= _ftpgallery_galleryPath($node) . "<br />";
 
   if( count($node->gallery['thumbnails']) > 0 ){
