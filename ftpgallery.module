@@ -144,14 +144,14 @@ function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
 
   if( !empty($node->error) ){
     $node->content['error'] = array(
-      '#value' => theme('ftpgallery_error', $node->error),
-      '#weight' => 1,
+      '#value' => theme('ftpgallery_error', $node),
+      '#weight' => 2,
     );
   }
 
   $node->content['gallery'] = array(
     '#value' => theme('ftpgallery_gallery', $node),
-    '#weight' => 2,
+    '#weight' => 1,
   );
 
   return $node;
@@ -167,20 +167,20 @@ function _ftpgallery_parseGalleryFolder($node) {
   }
 
   // get files in the gallery folder
-  $fileArray = scandir($node->galleryurl);
+  $filePathArray = scandir($node->galleryurl);
 
-  foreach($fileArray as $file) {
-    if( _ftpgallery_isValidFileType($file) ) {
-      if( _ftpgallery_isThunbnail($file) ) {
-        array_push($thumbnails, $file);
+  foreach($filePathArray as $filePath) {
+    if( _ftpgallery_isValidFileType($filePath) ) {
+      if( _ftpgallery_isThunbnail($filePath) ) {
+        array_push($thumbnails, $filePath);
       } else {
-        array_push($pictures, $file);
+        array_push($pictures, $filePath);
       }
     }
   }
 
   if( count($thumbnails) != count($pictures) ){
-     $node = _ftpgallery_formatError($node, t('Not equal number of thumbnails and pictures.'));
+     $node = _ftpgallery_formatError($node, t('Not equal number of thumbnails and pictures.'), true);
   }
 
   $node->gallery['thumbnails'] = $thumbnails;
@@ -212,15 +212,15 @@ function _ftpgallery_isThunbnail($file){
 }
 
 function theme_ftpgallery_gallery($node) {
-// <a href="http://www.jugendundnaturoberwallis.ch/files/gallery/2011_skiiwiekend/img_1733_jpeg.jpeg" rel="lightbox[2011_skiiwiekend]"><img class="photo" src="http://www.jugendundnaturoberwallis.ch/files/gallery/2011_skiiwiekend/thumb_img_1733_jpeg.jpeg" width="120" height="120"></a>
-
   $output = '<div class="ftpgallery_gallery">';
 
   // we only display pictures with a thumbnail.
   for ($i = 0; $i < count($node->gallery['thumbnails']); $i++) {
     $output .= '<a href="';
     $output .= $node->galleryurl . "/" . $node->gallery['pictures'][$i];
-    $output .= '" rel="lightbox[';
+    $output .= '"';
+
+    $output .= 'rel="lightbox[';
     $output .= $node->nid;
     $output .= ']">';
 
@@ -233,32 +233,49 @@ function theme_ftpgallery_gallery($node) {
 
     $output .= '</a>';
   }
-
- // TODO remove Debug stuff.
-  $output .= "<br>";
-
-  foreach($node->gallery['thumbnails'] as $thumbnail){
-     $output .= $node->galleryurl . "/" . $thumbnail . "<br>";
-  }
-
-  foreach($node->gallery['pictures'] as $picture){
-     $output .= $node->galleryurl . "/" . $picture . "<br>";
-  }
-
   $output .= '</div>';
   return $output;
 }
 
 // error handling
-function _ftpgallery_formatError($node, $errorText){
-  $node->error .= $errorText . "<br>";
+function _ftpgallery_formatError($node, $errorText, $warning = FALSE){
+  if( !$node->error ){
+    $node->error = array();
+  }
+
+  $output  = $warning ? t("Warning") : t("Error");
+  $output .= ": ";
+  $output .= check_plain($errorText);
+
+  array_push( $node->error, $output );
   return $node;
 }
 
-function theme_ftpgallery_error($text) {
+function theme_ftpgallery_error($node) {
   $output = '<div class="ftpgallery_error">';
-  $output .= t('Error: %text', array('%text' => check_plain($text)));
+
+  foreach( $node->error as $errorText ){
+    $output .= "<p>" . $errorText . "</p>";
+  }
+
+  $output .= _ftpgallery_debug($node);
+
   $output .= '</div>';
+  return $output;
+}
+
+function _ftpgallery_debug($node){
+  $output = "Debug info: <br />";
+
+  $output .= $node->galleryurl . "<br />";
+
+  foreach($node->gallery['thumbnails'] as $thumbnail){
+     $output .= $node->galleryurl . "/" . $thumbnail . "<br />";
+  }
+
+  foreach($node->gallery['pictures'] as $picture){
+     $output .= $node->galleryurl . "/" . $picture . "<br />";
+  }
   return $output;
 }
 
