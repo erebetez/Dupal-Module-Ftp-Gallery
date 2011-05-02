@@ -13,9 +13,9 @@ function ftpgallery_admin() {
 
   $form['ftpgallery_thumbprefix'] = array(
     '#type' => 'textfield',
-    '#title' => t('Thumbnail prefix'),
+    '#title' => t('Thumbnail prefix or subfolder'),
     '#default_value' => variable_get('ftpgallery_thumbprefix', 'thumb_'),
-    '#description' => t("The prefix of the thumbnail files."),
+    '#description' => t("The prefix of the thumbnail files or the subfolder with the thumbnails inside."),
     '#required' => TRUE,
   );
 

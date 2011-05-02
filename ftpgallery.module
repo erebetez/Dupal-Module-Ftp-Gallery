@@ -1,7 +1,6 @@
 <?php
 
 require_once ( dirname(__FILE__) . '/ftpgallery.database.inc');
-require_once ( dirname(__FILE__) . '/ftpgallery.settings.inc');
 require_once ( dirname(__FILE__) . '/ftpgallery.errorhandling.inc');
 
 function ftpgallery_help($path, $arg) {
@@ -57,6 +56,7 @@ function ftpgallery_menu() {
     'page arguments' => array('ftpgallery_admin'),
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
+    'file' => 'ftpgallery.admin.inc',
    );
 
   return $items;
@@ -85,8 +85,8 @@ function ftpgallery_form(&$node, $form_state) {
   }
 
   $form['galleryurl'] = array(
-    '#type' => 'textfield', 
-    '#title' => t('Path to Folder'), 
+    '#type' => 'textfield',
+    '#title' => t('Path to Folder'),
     '#required' => TRUE,
     '#default_value' => isset($node->galleryurl) ? $node->galleryurl : '',
     '#weight' => 0,
