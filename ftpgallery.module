@@ -200,28 +200,32 @@ function _ftpgallery_isThunbnail($file){
 
 function theme_ftpgallery_gallery($node) {
   $output = '<div class="ftpgallery_gallery">';
+  $galleryPath = _ftpgallery_galleryPath($node);
 
   // we only display pictures with a thumbnail.
   for ($i = 0; $i < count($node->gallery['thumbnails']); $i++) {
-    $output .= '<a href="';
-    $output .= _ftpgallery_galleryPath($node) . $node->gallery['pictures'][$i];
-    $output .= '"';
-
-    $output .= 'rel="lightbox[';
-    $output .= $node->nid;
-    $output .= ']">';
-
-    $url = _ftpgallery_galleryPath($node) . $node->gallery['thumbnails'][$i];
-    $alt = $node->gallery['thumbnails'][$i];
-    $title = $node->gallery['thumbnails'][$i];
-    $attributes = 'width="120" height="120"';
-
-    $output .=  theme('image', $url, $alt, $title, $attributes, FALSE);
-
-    $output .= '</a>';
+    $output .= theme_ftpgallery_formatLightboxImage(
+      $galleryPath . $node->gallery['pictures'][$i],
+      $galleryPath . $node->gallery['thumbnails'][$i],
+      $node->nid,
+      $node->gallery['thumbnails'][$i]
+    );
   }
   $output .= '</div>';
   return $output;
+}
+
+function theme_ftpgallery_formatLightboxImage($pictureUrl, $thumbnailUrl, $lightboxGroup, $alt='', $title='' , $attributes = NULL){
+    $output .= '<a href="' . $pictureUrl . '"';
+
+    $output .= 'rel="lightbox[';
+    $output .= $lightboxGroup;
+    $output .= ']">';
+
+    $output .=  theme('image', $thumbnailUrl, $alt, $title, $attributes, FALSE);
+
+    $output .= '</a>';
+    return $output;
 }
 
 // Tell Drupal about the theme functions
@@ -232,6 +236,9 @@ function ftpgallery_theme() {
     ),
     'ftpgallery_gallery' => array(
       'arguments' => array('node'),
+    ),
+    'ftpgallery_formatLightboxImage' => array(
+      'arguments' => array('pictureUrl', 'thumbnailUrl', 'lightboxGroup', 'alt', 'title' , 'attributes'),
     ),
   );
 }
