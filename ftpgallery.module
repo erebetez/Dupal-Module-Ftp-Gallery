@@ -84,15 +84,38 @@ function ftpgallery_form(&$node, $form_state) {
     $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
   }
 
+  $folderList = _ftpgallery_readFolders( _ftpgallery_galleryPath($node) );
+
   $form['galleryurl'] = array(
-    '#type' => 'textfield',
+    '#type' => 'select',
     '#title' => t('Path to Folder'),
+    '#description' => t('Choose path where the gallery is located on the server.'),
     '#required' => TRUE,
     '#default_value' => isset($node->galleryurl) ? $node->galleryurl : '',
+    '#options' => $folderList,
     '#weight' => 0,
   );
 
+//   $form['thumbnailId'] = array(
+//     '#type' => 'textfield',
+//     '#title' => t('Thu'),
+//     '#required' => TRUE,
+//     '#default_value' => isset($node->galleryurl) ? $node->galleryurl : '',
+//     '#weight' => 0,
+//   );
+
   return $form;
+}
+
+function _ftpgallery_readFolders($scanPath){
+  $fileNameList = scandir( $scanPath );
+  $folderList = array();
+  foreach( $fileNameList as $file ){
+    if( !is_dir($file) ){
+      array_push($folderList, $file);
+    }
+  }
+  return $folderList;
 }
 
 function ftpgallery_validate($node, &$form_state) {
