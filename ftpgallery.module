@@ -97,14 +97,14 @@ function ftpgallery_form(&$node, $form_state) {
 
 function ftpgallery_validate($node, &$form_state) {
 
-  if (!_ftpgallery_galleryPathExist($node)) {
+  if (!_ftpgallery_fileExists($node)) {
     form_set_error('galleryurl', t('The path for the gallery does not exist. Please use a valid path.'));
   }
 
 }
 
-function _ftpgallery_galleryPathExist($node) {
-  return file_exists( getcwd() . "/" . _ftpgallery_galleryPath($node)  );
+function _ftpgallery_fileExists($node, $file = '') {
+  return file_exists( getcwd() . "/" . _ftpgallery_galleryPath($node) . $file );
 }
 
 function _ftpgallery_galleryPath($node){
@@ -135,7 +135,7 @@ function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
 }
 
 function _ftpgallery_getGalleryPictures($node){
-  if( !_ftpgallery_galleryPathExist($node) ){
+  if( !_ftpgallery_fileExists($node) ){
      _ftpgallery_formatError(t('Gallery path does not exist.'));
      return $node;
   }
@@ -160,14 +160,25 @@ function _ftpgallery_parseGalleryFolder($node) {
   // get files in the gallery folder
   $filePathArray = scandir( _ftpgallery_galleryPath($node) );
 
-  foreach($filePathArray as $filePath) {
-    if( _ftpgallery_isValidFileType($filePath) ) {
-      if( _ftpgallery_isThunbnail($filePath) ) {
-        array_push($thumbnails, $filePath);
-      } else {
-        array_push($pictures, $filePath);
-      }
+  $thumbnailPrefix = variable_get('ftpgallery_thumbprefix', 'thumb_');
+  $isThumbnailFolder = _ftpgallery_isThumbnailPrefixAFolder($thumbnailPrefix, $filePathArray);
+
+  if(!$isThumbnailFolder){
+    $filePathArray = preg_grep("/^" . $thumbnailPrefix ."/", $filePathArray, PREG_GREP_INVERT);
+  }
+
+  foreach($filePathArray as $fileName) {
+    if( !_ftpgallery_isValidFileType($fileName) ) {
+      continue;
     }
+    $thumbnail = _ftpgallery_getThumbnail($fileName, $thumbnailPrefix, $isThumbnailFolder);
+
+    if( !_ftpgallery_fileExists( $node, $thumbnail ) ){
+      _ftpgallery_formatError(t("No matching thumbnail for picture $fileName and thumbnail $thumbnail "));
+      continue;
+    }
+    array_push($pictures, $fileName);
+    array_push($thumbnails, $thumbnail);
   }
 
   $node->gallery = array();
@@ -176,11 +187,16 @@ function _ftpgallery_parseGalleryFolder($node) {
   return $node;
 }
 
-function _ftpgallery_isValidFileType($file){
+function _ftpgallery_isThumbnailPrefixAFolder($thumbnailPrefix, $filePathArray){
+   $thumbnailPrefix = "/^" . $thumbnailPrefix . "$/";
+   return (count(preg_grep($thumbnailPrefix, $filePathArray)) > 0);
+}
+
+function _ftpgallery_isValidFileType($fileName){
   $allowedFileTypes = variable_get('ftpgallery_allowedfiletypes', 'jpg jpeg png');
   $allowedFileTypes = explode(" ", $allowedFileTypes);
 
-  $fileNameEnding = strtolower(end(explode(".", $file)));
+  $fileNameEnding = strtolower(end(explode(".", $fileName)));
 
   foreach($allowedFileTypes as $ending){
     if( $fileNameEnding == $ending ) {
@@ -190,12 +206,12 @@ function _ftpgallery_isValidFileType($file){
   return false;
 }
 
-function _ftpgallery_isThunbnail($file){
-  $thumbnailPrefix = variable_get('ftpgallery_thumbprefix', 'thumb_');
+function _ftpgallery_getThumbnail($fileName, $thumbnailPrefix, $isFolder = FALSE){
+  if( $isFolder ){
+    return $fileName . "/" . $thumbnailPrefix . "/" . $fileName;
+  }
 
-  $regexp = '/^' . $thumbnailPrefix . '/';
-
-  return ( preg_match( $regexp, $file ) > 0 );
+  return $thumbnailPrefix . $fileName;
 }
 
 function theme_ftpgallery_gallery($node) {
