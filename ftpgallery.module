@@ -208,7 +208,7 @@ function _ftpgallery_isValidFileType($fileName){
 
 function _ftpgallery_getThumbnail($fileName, $thumbnailPrefix, $isFolder = FALSE){
   if( $isFolder ){
-    return $fileName . "/" . $thumbnailPrefix . "/" . $fileName;
+    return $thumbnailPrefix . "/" . $fileName;
   }
 
   return $thumbnailPrefix . $fileName;
