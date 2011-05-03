@@ -1,0 +1,10 @@
+
+.lightboxThumbnail {
+  /*CSS3 shadow: 10px blurred shadow*/
+  box-shadow:5px 5px 10px gray; 
+  -webkit-box-shadow:5px 5px 10px gray; /*Safari shadow version*/
+  -moz-box-shadow:5px 5px 10px gray; /*Mozilla shadow version*/
+}
+
+.ftpgallery_gallery{
+}

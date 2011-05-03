@@ -23,7 +23,7 @@ function ftpgallery_node_info() {
 } 
 
 function ftpgallery_init() {
-//   drupal_add_css(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.css');
+  drupal_add_css(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.css');
 }
 
 function ftpgallery_perm() {
@@ -270,11 +270,13 @@ function theme_ftpgallery_gallery($node) {
 }
 
 function theme_ftpgallery_formatLightboxImage($pictureUrl, $thumbnailUrl, $lightboxGroup, $alt='', $title='' , $attributes = NULL){
-    $output .= '<a href="' . $pictureUrl . '"';
+    $output .= '<a href="' . $pictureUrl . '" ';
 
     $output .= 'rel="lightbox[';
     $output .= $lightboxGroup;
-    $output .= ']">';
+    $output .= ']"> ';
+
+    $attributes['class'] = 'lightboxThumbnail';
 
     $output .=  theme('image', $thumbnailUrl, $alt, $title, $attributes, FALSE);
 
