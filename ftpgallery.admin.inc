@@ -11,13 +11,13 @@ function ftpgallery_admin() {
     '#required' => TRUE,
   );
 
-  $form['ftpgallery_thumbprefix'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Thumbnail prefix or subfolder'),
-    '#default_value' => variable_get('ftpgallery_thumbprefix', 'thumb_'),
-    '#description' => t("The prefix of the thumbnail files or the subfolder with the thumbnails inside."),
-    '#required' => TRUE,
-  );
+//   $form['ftpgallery_thumbprefix'] = array(
+//     '#type' => 'textfield',
+//     '#title' => t('Thumbnail prefix or subfolder'),
+//     '#default_value' => variable_get('ftpgallery_thumbprefix', 'thumb_'),
+//     '#description' => t("The prefix of the thumbnail files or the subfolder with the thumbnails inside."),
+//     '#required' => TRUE,
+//   );
 
   $form['ftpgallery_gallerybasedir'] = array(
     '#type' => 'textfield',
@@ -34,9 +34,6 @@ function ftpgallery_admin_validate($form, &$form_state) {
   $inputstring = $form_state['values']['ftpgallery_allowedfiletypes'];
   $inputstring = _ftpgallery_formatFileTypeString($inputstring);
   $form_state['values']['ftpgallery_allowedfiletypes'] = $inputstring;
-
-  $form_state['values']['ftpgallery_thumbprefix']
-    = check_plain($form_state['values']['ftpgallery_thumbprefix']);
 
   $baseDir = $form_state['values']['ftpgallery_gallerybasedir'];
   if( !file_exists( getcwd() . "/" . $baseDir ) ){

@@ -20,6 +20,7 @@ function ftpgallery_schema() {
       'vid'      => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'nid'      => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'galleryurl'    => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+      'thumbid'    => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
     ),
     'primary key' => array('vid', 'nid'),
   );
@@ -27,8 +28,8 @@ function ftpgallery_schema() {
   return $schema;
 } 
 
-// function mymodule_update_6000() {
-//   $ret = array();
-//   db_add_field($ret, 'ftpgallery', 'newcol', array('type' => 'int'));
-//   return $ret;
-// }
+function ftpgallery_update_6000() {
+  $ret = array();
+  db_add_field($ret, 'ftpgallery', 'thumbid', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
+  return $ret;
+}

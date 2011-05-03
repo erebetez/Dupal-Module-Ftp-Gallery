@@ -3,7 +3,7 @@
 // --- Database hooks ---
 
 function ftpgallery_insert($node) {
-  db_query("INSERT INTO {ftpgallery} (vid, nid, galleryurl) VALUES (%d, %d, '%s')", $node->vid, $node->nid, $node->galleryurl);
+  db_query("INSERT INTO {ftpgallery} (vid, nid, galleryurl, thumbid) VALUES (%d, %d, '%s', '%s')", $node->vid, $node->nid, $node->galleryurl, $node->thumbid);
 }
 
 function ftpgallery_update($node) {
@@ -12,7 +12,7 @@ function ftpgallery_update($node) {
     ftpgallery_insert($node);
   }
   else {
-    db_query("UPDATE {ftpgallery} SET galleryurl = '%s' WHERE vid = %d", $node->galleryurl, $node->vid);
+    db_query("UPDATE {ftpgallery} SET galleryurl = '%s', thumbid = '%s' WHERE vid = %d", $node->galleryurl, $node->thumbid, $node->vid);
   }
 }
 
@@ -21,16 +21,6 @@ function ftpgallery_delete($node) {
   db_query('DELETE FROM {ftpgallery} WHERE nid = %d', $node->nid);
 }
 
-// Revisions in the ftpgallery table
-function ftpgallery_nodeapi(&$node, $op, $teaser, $page) {
-  switch ($op) {
-    case 'delete revision':
-      // Notice that we're matching a single revision based on the node's vid.
-      db_query('DELETE FROM {ftpgallery} WHERE vid = %d', $node->vid);
-      break;
-  }
-}
-
 function ftpgallery_load($node) {
-  return db_fetch_object(db_query('SELECT galleryurl FROM {ftpgallery} WHERE vid = %d', $node->vid));
+  return db_fetch_object(db_query('SELECT galleryurl, thumbid FROM {ftpgallery} WHERE vid = %d', $node->vid));
 }

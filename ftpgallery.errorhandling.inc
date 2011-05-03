@@ -1,20 +1,12 @@
 <?php
 
-// error handling
-function _ftpgallery_formatError($errorText, $warning = FALSE){
-  $output  = $warning ? t("Warning") : t("Error");
-  $output .= ": ";
-  $output .= check_plain($errorText);
-
-  form_set_error($output, $output);
-}
 
 function theme_ftpgallery_debug($node) {
   $output = '<div class="ftpgallery_error">';
-  $output .= "Debug info: <br />";
+  $output .= "<h2>Debug info</h2>";
 
   $output .= "Thumbnail prefix: ";
-  $output .= variable_get('ftpgallery_thumbprefix', 'thumb_') . "<br />";
+  $output .= $node->thumbid . "<br />";
 
   $output .= "Allowed file types: ";
   $output .= variable_get('ftpgallery_allowedfiletypes', 'jpg jpeg png') . "<br />";
