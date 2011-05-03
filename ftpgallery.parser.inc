@@ -4,9 +4,13 @@ function _ftpgallery_parseGalleryFolder($node) {
   $thumbnails = array();
   $pictures = array();
 
-  $fileNameList = _ftpgallery_getPictureNameList($node);
+  // get files in the gallery folder
+  $fileNameList = scandir( _ftpgallery_galleryPath($node) );
 
   $isThumbnailFolder = _ftpgallery_isThumbnailPrefixAFolder($node, $fileNameList);
+
+  // remove thumbnails or folders from the List that matches the thumbnail prefix
+  $fileNameList = preg_grep("/^" . $node->thumbid ."/", $fileNameList, PREG_GREP_INVERT);
 
   foreach($fileNameList as $fileName) {
     if( !_ftpgallery_isValidFileType($fileName) ) {
@@ -20,26 +24,15 @@ function _ftpgallery_parseGalleryFolder($node) {
       array_push($thumbnails, $thumbnail);
       continue;
     }
-    drupal_set_message(t("No matching thumbnail for picture %file. Thumbnailname %thumb ",
-                         array('%file' => check_plain($fileName)),
-                         array('%thumb' => check_plain($thumbnail)),
-                         'warning' ));
+    drupal_set_message(t("No matching thumbnail for picture %file. Thumbnail name %thumb ",
+                         array('%file' => check_plain($fileName), '%thumb' => check_plain($thumbnail))),
+                         'warning');
   }
 
   $node->gallery = array();
   $node->gallery['thumbnails'] = $thumbnails;
   $node->gallery['pictures'] = $pictures;
   return $node;
-}
-
-function _ftpgallery_getPictureNameList($node){
-  // get files in the gallery folder
-  $fileNameList = scandir( _ftpgallery_galleryPath($node) );
-
-  // remove thumbnails or folders from the List that matches the thumbnail prefix
-  $fileNameList = preg_grep("/^" . $node->thumbid ."/", $fileNameList, PREG_GREP_INVERT);
-
-  return $fileNameList;
 }
 
 function _ftpgallery_isThumbnailPrefixAFolder($node, $fileNameList){
