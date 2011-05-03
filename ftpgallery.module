@@ -183,7 +183,7 @@ function _ftpgallery_getGalleryPictures($node){
   }
 
   if( count($node->gallery['thumbnails']) == 0 ){
-    drupal_set_message(t('No matching thumbnails in the Folder.'), 'error');
+    drupal_set_message(t('No Pictures or no matching thumbnails in the Folder.'), 'error');
   }
 
   return $node;
@@ -193,15 +193,11 @@ function _ftpgallery_parseGalleryFolder($node) {
   $thumbnails = array();
   $pictures = array();
 
-  // get files in the gallery folder
-  $fileNameArray = scandir( _ftpgallery_galleryPath($node) );
+  $fileNameList = _ftpgallery_getPictureNameList($node);
 
-  $isThumbnailFolder = _ftpgallery_isThumbnailPrefixAFolder($node, $fileNameArray);
+  $isThumbnailFolder = _ftpgallery_isThumbnailPrefixAFolder($node, $fileNameList);
 
-  // remove thumbnails or folders from the List
-  $fileNameArray = preg_grep("/^" . $node->thumbid ."/", $fileNameArray, PREG_GREP_INVERT);
-
-  foreach($fileNameArray as $fileName) {
+  foreach($fileNameList as $fileName) {
     if( !_ftpgallery_isValidFileType($fileName) ) {
       continue;
     }
@@ -213,7 +209,7 @@ function _ftpgallery_parseGalleryFolder($node) {
       array_push($thumbnails, $thumbnail);
       continue;
     }
-    drupal_set_message(t("No matching thumbnail for picture %file and thumbnail %thumb ",
+    drupal_set_message(t("No matching thumbnail for picture %file. Thumbnailname %thumb ",
                          array('%file' => check_plain($fileName)),
                          array('%thumb' => check_plain($thumbnail)),
                          'warning' ));
@@ -225,9 +221,19 @@ function _ftpgallery_parseGalleryFolder($node) {
   return $node;
 }
 
-function _ftpgallery_isThumbnailPrefixAFolder($node, $filePathArray){
+function _ftpgallery_getPictureNameList($node){
+  // get files in the gallery folder
+  $fileNameList = scandir( _ftpgallery_galleryPath($node) );
+
+  // remove thumbnails or folders from the List that matches the thumbnail prefix
+  $fileNameList = preg_grep("/^" . $node->thumbid ."/", $fileNameList, PREG_GREP_INVERT);
+
+  return $fileNameList;
+}
+
+function _ftpgallery_isThumbnailPrefixAFolder($node, $fileNameList){
    $thumbnailPrefix = "/^" . $node->thumbid . "$/";
-   return (count(preg_grep($thumbnailPrefix, $filePathArray)) > 0);
+   return (count(preg_grep($thumbnailPrefix, $fileNameList)) > 0);
 }
 
 function _ftpgallery_isValidFileType($fileName){
@@ -241,6 +247,10 @@ function _ftpgallery_isValidFileType($fileName){
       return true;
     }
   }
+
+//   drupal_set_message(t("%file is no valid filetype. Check the settings. ",
+//                        array('%file' => check_plain($fileName)), 'warning' ));
+
   return false;
 }
 
