@@ -22,6 +22,10 @@ function ftpgallery_node_info() {
   );
 } 
 
+function ftpgallery_init() {
+//   drupal_add_css(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.css');
+}
+
 function ftpgallery_perm() {
   return array(
     'create ftpgallery',
@@ -62,6 +66,33 @@ function ftpgallery_menu() {
   return $items;
 }
 
+function ftpgallery_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+    case 'delete revision':
+      // Notice that we're matching a single revision based on the node's vid.
+      db_query('DELETE FROM {ftpgallery} WHERE vid = %d', $node->vid);
+      break;
+
+    case 'presave':
+      //get the folder name since the select form returns the id an not the value of the selected field.
+      $folderList = _ftpgallery_readFolders( variable_get('ftpgallery_gallerybasedir', 'files') );
+      $node->galleryurl = $folderList[$node->galleryId];
+      break;
+  }
+}
+
+function _ftpgallery_readFolders($scanPath){
+  $fileNameList = scandir( $scanPath );
+  $folderList = array();
+  foreach( $fileNameList as $file ){
+    if( !is_dir($file) ){
+      array_push($folderList, $file);
+    }
+  }
+  return $folderList;
+}
+
+
 // --- The Form ---
 function ftpgallery_form(&$node, $form_state) {
   $type = node_get_types('type', $node);
@@ -84,49 +115,31 @@ function ftpgallery_form(&$node, $form_state) {
     $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
   }
 
-  $folderList = _ftpgallery_readFolders( _ftpgallery_galleryPath($node) );
-
-  $form['galleryurl'] = array(
+  $form['galleryId'] = array(
     '#type' => 'select',
     '#title' => t('Path to Folder'),
     '#description' => t('Choose path where the gallery is located on the server.'),
     '#required' => TRUE,
-    '#default_value' => isset($node->galleryurl) ? $node->galleryurl : '',
-    '#options' => $folderList,
+    '#default_value' => 0, //isset($node->galleryId) ? $node->galleryId : 0
+    '#options' => _ftpgallery_readFolders( variable_get('ftpgallery_gallerybasedir', 'files') ),
     '#weight' => 0,
   );
 
-//   $form['thumbnailId'] = array(
-//     '#type' => 'textfield',
-//     '#title' => t('Thu'),
-//     '#required' => TRUE,
-//     '#default_value' => isset($node->galleryurl) ? $node->galleryurl : '',
-//     '#weight' => 0,
-//   );
+  $form['thumbid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Thumbnail prefix or Path'),
+    '#required' => TRUE,
+    '#default_value' => isset($node->thumbid) ? $node->thumbid : 'thumb_',
+    '#weight' => 1,
+  );
 
   return $form;
 }
 
-function _ftpgallery_readFolders($scanPath){
-  $fileNameList = scandir( $scanPath );
-  $folderList = array();
-  foreach( $fileNameList as $file ){
-    if( !is_dir($file) ){
-      array_push($folderList, $file);
-    }
+function _ftpgallery_galleryPathExists($node, $file = ''){
+  if( empty($node->galleryurl) ){
+    return false;
   }
-  return $folderList;
-}
-
-function ftpgallery_validate($node, &$form_state) {
-
-  if (!_ftpgallery_fileExists($node)) {
-    form_set_error('galleryurl', t('The path for the gallery does not exist. Please use a valid path.'));
-  }
-
-}
-
-function _ftpgallery_fileExists($node, $file = '') {
   return file_exists( getcwd() . "/" . _ftpgallery_galleryPath($node) . $file );
 }
 
@@ -146,7 +159,7 @@ function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
     '#weight' => 1,
   );
 
-  $errors = form_set_error();
+  $errors = drupal_get_messages( 'error', FALSE);
   if( !empty($errors) && $page ){
     $node->content['debug'] = array(
       '#value' => theme('ftpgallery_debug', $node),
@@ -158,19 +171,19 @@ function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
 }
 
 function _ftpgallery_getGalleryPictures($node){
-  if( !_ftpgallery_fileExists($node) ){
-     _ftpgallery_formatError(t('Gallery path does not exist.'));
+  if( !_ftpgallery_galleryPathExists($node) ){
+     drupal_set_message(t('Gallery path does not exist.'), 'error');
      return $node;
   }
 
   $node = _ftpgallery_parseGalleryFolder($node);
 
   if( count($node->gallery['thumbnails']) != count($node->gallery['pictures']) ){
-    _ftpgallery_formatError(t('Not equal number of thumbnails and pictures.'), true);
+    drupal_set_message(t('Not equal number of thumbnails and pictures.'), 'warning');
   }
 
   if( count($node->gallery['thumbnails']) == 0 ){
-    _ftpgallery_formatError(t('No matching thumbnails in the Folder.'), true);
+    drupal_set_message(t('No matching thumbnails in the Folder.'), 'error');
   }
 
   return $node;
@@ -181,27 +194,29 @@ function _ftpgallery_parseGalleryFolder($node) {
   $pictures = array();
 
   // get files in the gallery folder
-  $filePathArray = scandir( _ftpgallery_galleryPath($node) );
+  $fileNameArray = scandir( _ftpgallery_galleryPath($node) );
 
-  $thumbnailPrefix = variable_get('ftpgallery_thumbprefix', 'thumb_');
-  $isThumbnailFolder = _ftpgallery_isThumbnailPrefixAFolder($thumbnailPrefix, $filePathArray);
+  $isThumbnailFolder = _ftpgallery_isThumbnailPrefixAFolder($node, $fileNameArray);
 
-  if(!$isThumbnailFolder){
-    $filePathArray = preg_grep("/^" . $thumbnailPrefix ."/", $filePathArray, PREG_GREP_INVERT);
-  }
+  // remove thumbnails or folders from the List
+  $fileNameArray = preg_grep("/^" . $node->thumbid ."/", $fileNameArray, PREG_GREP_INVERT);
 
-  foreach($filePathArray as $fileName) {
+  foreach($fileNameArray as $fileName) {
     if( !_ftpgallery_isValidFileType($fileName) ) {
       continue;
     }
-    $thumbnail = _ftpgallery_getThumbnail($fileName, $thumbnailPrefix, $isThumbnailFolder);
 
-    if( !_ftpgallery_fileExists( $node, $thumbnail ) ){
-      _ftpgallery_formatError(t("No matching thumbnail for picture $fileName and thumbnail $thumbnail "));
+    $thumbnail = _ftpgallery_getThumbnail($fileName, $node->thumbid, $isThumbnailFolder);
+
+    if( _ftpgallery_galleryPathExists( $node, $thumbnail ) ){
+      array_push($pictures, $fileName);
+      array_push($thumbnails, $thumbnail);
       continue;
     }
-    array_push($pictures, $fileName);
-    array_push($thumbnails, $thumbnail);
+    drupal_set_message(t("No matching thumbnail for picture %file and thumbnail %thumb ",
+                         array('%file' => check_plain($fileName)),
+                         array('%thumb' => check_plain($thumbnail)),
+                         'warning' ));
   }
 
   $node->gallery = array();
@@ -210,8 +225,8 @@ function _ftpgallery_parseGalleryFolder($node) {
   return $node;
 }
 
-function _ftpgallery_isThumbnailPrefixAFolder($thumbnailPrefix, $filePathArray){
-   $thumbnailPrefix = "/^" . $thumbnailPrefix . "$/";
+function _ftpgallery_isThumbnailPrefixAFolder($node, $filePathArray){
+   $thumbnailPrefix = "/^" . $node->thumbid . "$/";
    return (count(preg_grep($thumbnailPrefix, $filePathArray)) > 0);
 }
 
