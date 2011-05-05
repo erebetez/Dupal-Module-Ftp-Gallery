@@ -11,14 +11,6 @@ function ftpgallery_admin() {
     '#required' => TRUE,
   );
 
-//   $form['ftpgallery_thumbprefix'] = array(
-//     '#type' => 'textfield',
-//     '#title' => t('Thumbnail prefix or subfolder'),
-//     '#default_value' => variable_get('ftpgallery_thumbprefix', 'thumb_'),
-//     '#description' => t("The prefix of the thumbnail files or the subfolder with the thumbnails inside."),
-//     '#required' => TRUE,
-//   );
-
   $form['ftpgallery_gallerybasedir'] = array(
     '#type' => 'textfield',
     '#title' => t('Base dir for all FTP gallerys'),

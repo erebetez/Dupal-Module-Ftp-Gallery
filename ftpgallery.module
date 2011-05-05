@@ -25,6 +25,8 @@ function ftpgallery_node_info() {
 function ftpgallery_init() {
   // Add the Stylesheet
   drupal_add_css(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.css');
+
+//   drupal_add_js(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.js');
 }
 
 function ftpgallery_perm() {
@@ -64,34 +66,16 @@ function ftpgallery_menu() {
     'file' => 'ftpgallery.admin.inc',
    );
 
+  // callback for the dynamic ahah form
+  $items['ftpgallery/createform/callback'] = array(
+    'page callback' => 'ftpgallery_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
-function ftpgallery_nodeapi(&$node, $op, $teaser, $page) {
-  switch ($op) {
-    case 'delete revision':
-      // Notice that we're matching a single revision based on the node's vid.
-      db_query('DELETE FROM {ftpgallery} WHERE vid = %d', $node->vid);
-      break;
-
-    case 'presave':
-      //get the folder name since the 'select' form returns the id an not the value of the selected field.
-      $folderList = _ftpgallery_readFolders( variable_get('ftpgallery_gallerybasedir', 'files') );
-      $node->galleryurl = $folderList[$node->galleryId];
-      break;
-  }
-}
-
-function _ftpgallery_readFolders($scanPath){
-  $fileNameList = scandir( $scanPath );
-  $folderList = array();
-  foreach( $fileNameList as $file ){
-    if( !is_dir($file) ){
-      array_push($folderList, $file);
-    }
-  }
-  return $folderList;
-}
 
 // --- The Form ---
 function ftpgallery_form(&$node, $form_state) {
@@ -108,21 +92,22 @@ function ftpgallery_form(&$node, $form_state) {
   }
 
   if ($type->has_body) {
-    // In Drupal 6, we use node_body_field() to get the body and filter
-    // elements. This replaces the old textarea + filter_form() method of
-    // setting this up. It will also ensure the teaser splitter gets set up
-    // properly.
     $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
   }
 
-  $form['galleryId'] = array(
+  $form['galleryurl'] = array(
     '#type' => 'select',
     '#title' => t('Path to Folder'),
     '#description' => t('Choose path where the gallery is located on the server.'),
     '#required' => TRUE,
-    '#default_value' => 0, //isset($node->galleryId) ? $node->galleryId : 0
-    '#options' => _ftpgallery_readFolders( variable_get('ftpgallery_gallerybasedir', 'files') ),
-    '#weight' => 0,
+    '#options' => drupal_map_assoc(_ftpgallery_readFolders( variable_get('ftpgallery_gallerybasedir', 'files') )),
+    '#default_value' => isset($node->galleryurl) ? $node->galleryurl : 0,
+    '#ahah' => array(
+      'path' => 'ftpgallery/createform/callback',
+      'wrapper' => 'dynamic-Content',
+    ),
+    '#attributes' => array('class' => 'gallery-Id'),
+    '#weight' => -1,
   );
 
   $form['thumbid'] = array(
@@ -130,22 +115,103 @@ function ftpgallery_form(&$node, $form_state) {
     '#title' => t('Thumbnail prefix or Path'),
     '#required' => TRUE,
     '#default_value' => isset($node->thumbid) ? $node->thumbid : 'thumb_',
-    '#weight' => 1,
+    '#weight' => 0,
+  );
+
+  $form['dynamicContent'] = array(
+    '#tree' => TRUE,
+    '#prefix' => '<div id="dynamic-Content">',
+    '#suffix' => '</div>',
+    '#weight' => 0,
+  );
+
+  $content = empty($node->galleryurl) ? 
+             '<div>test</div>' :
+             _ftpgallery_galleryContentPreviewBilder($node->galleryurl);
+
+  $form['dynamicContent']['galleryContent'] = array(
+    '#type' => 'markup',
+    '#value' => $content,
+    '#weight' => 0,
   );
 
   return $form;
 }
 
-function _ftpgallery_galleryPathExists($node, $file = ''){
-  if( empty($node->galleryurl) ){
-    return false;
+function _ftpgallery_readFolders($scanPath){
+  $fileNameList = scandir( $scanPath );
+  $folderList = array();
+  foreach( $fileNameList as $file ){
+    if( !is_dir($file) ){
+      array_push($folderList, $file);
+    }
   }
-  return file_exists( getcwd() . "/" . _ftpgallery_galleryPath($node) . $file );
+  return $folderList;
 }
 
-function _ftpgallery_galleryPath($node){
-  $baseDir = variable_get('ftpgallery_gallerybasedir', 'files');
-  return $baseDir . "/" . $node->galleryurl . "/";
+function _ftpgallery_galleryContentPreviewBilder($path){
+
+  $folderContent = scandir( variable_get('ftpgallery_gallerybasedir', 'files') . '/' . $path );
+
+  $output = '<div>' ;
+  $output .= 'path: ' . $path . '<br />';
+  $output .= 'form: ' . $form['values']['galleryurl'] . '<br />';
+
+  foreach($folderContent as $content){
+    $output .= $content . '<br />';
+  }
+
+  $output .= '</div>';
+  return $output;
+}
+
+/**
+ * This callback has nothing to do with the form itself, so just returns a bit
+ * of HTML that will replace the existing markup in $form['box'].
+ */
+function ftpgallery_callback() {
+  $form = ftpgallery_callback_helper();
+
+  $changed_elements = $form['dynamicContent'];
+
+  // Prevent duplicate wrappers.
+  unset($changed_elements['#prefix'], $changed_elements['#suffix']);
+
+  $output = theme('status_messages') . drupal_render($changed_elements);
+
+//   $output = 'my test output <br />' . $form['values']['galleryurl'];
+
+  drupal_json(array('status' => TRUE, 'data' => $output));
+  exit();
+}
+
+
+/**
+ * Does the very standard things that must be done in any normal callback.
+ * Used by each callback in this example module.
+ */
+function ftpgallery_callback_helper() {
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  $form = form_get_cache($form_build_id, $form_state);
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  $form_state['post'] = $form['#post'] = $_POST;
+  // Enable the submit/validate handlers to determine whether AHAH-submittted.
+  $form_state['ahah_submission'] = TRUE;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+  drupal_process_form($form_id, $form, $form_state);
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+  return $form;
+}
+
+function ftpgallery_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+    case 'delete revision':
+      // Notice that we're matching a single revision based on the node's vid.
+      db_query('DELETE FROM {ftpgallery} WHERE vid = %d', $node->vid);
+      break;
+  }
 }
 
 // --- Display ---
@@ -187,6 +253,17 @@ function _ftpgallery_getGalleryPictures($node){
   return $node;
 }
 
+function _ftpgallery_galleryPathExists($node, $file = ''){
+  if( empty($node->galleryurl) ){
+    return false;
+  }
+  return file_exists( getcwd() . "/" . _ftpgallery_galleryPath($node) . $file );
+}
+
+function _ftpgallery_galleryPath($node){
+  $baseDir = variable_get('ftpgallery_gallerybasedir', 'files');
+  return $baseDir . "/" . $node->galleryurl . "/";
+}
 
 // Tell Drupal about the theme functions
 function ftpgallery_theme() {
