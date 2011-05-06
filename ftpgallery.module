@@ -67,8 +67,9 @@ function ftpgallery_menu() {
    );
 
   // callback for the dynamic ahah form
-  $items['ftpgallery/createform/callback'] = array(
+  $items['ftpgallery/createform/updatefolder'] = array(
     'page callback' => 'ftpgallery_callback',
+//     'page arguments' => array(2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -103,7 +104,7 @@ function ftpgallery_form(&$node, $form_state) {
     '#options' => drupal_map_assoc(_ftpgallery_readFolders( variable_get('ftpgallery_gallerybasedir', 'files') )),
     '#default_value' => isset($node->galleryurl) ? $node->galleryurl : 0,
     '#ahah' => array(
-      'path' => 'ftpgallery/createform/callback',
+      'path' => 'ftpgallery/createform/updatefolder',
       'wrapper' => 'dynamic-Content',
     ),
     '#attributes' => array('class' => 'gallery-Id'),
@@ -118,19 +119,21 @@ function ftpgallery_form(&$node, $form_state) {
     '#weight' => 0,
   );
 
-  $form['dynamicContent'] = array(
-    '#tree' => TRUE,
-    '#prefix' => '<div id="dynamic-Content">',
-    '#suffix' => '</div>',
-    '#weight' => 0,
+  $form['updateFolderContent'] = array(
+    '#type' => 'submit',
+    '#value' => t('Choose'),
+    '#attributes' => array('class' => 'next-button'),
+    '#submit' => array('ftpgallery_continue'),
   );
 
   $content = empty($node->galleryurl) ? 
              '<div>test</div>' :
-             _ftpgallery_galleryContentPreviewBilder($node->galleryurl);
+             _ftpgallery_galleryContentPreviewBilder($form_state['values']['galleryurl']);
 
-  $form['dynamicContent']['galleryContent'] = array(
+  $form['galleryContent'] = array(
     '#type' => 'markup',
+    '#prefix' => '<div id="dynamic-Content">',
+    '#suffix' => '</div>',
     '#value' => $content,
     '#weight' => 0,
   );
@@ -149,13 +152,14 @@ function _ftpgallery_readFolders($scanPath){
   return $folderList;
 }
 
-function _ftpgallery_galleryContentPreviewBilder($path){
+function _ftpgallery_galleryContentPreviewBilder(){
 
   $folderContent = scandir( variable_get('ftpgallery_gallerybasedir', 'files') . '/' . $path );
 
   $output = '<div>' ;
   $output .= 'path: ' . $path . '<br />';
   $output .= 'form: ' . $form['values']['galleryurl'] . '<br />';
+  $output .= 'formmy: ' . $form['my_values']['galleryurl'] . '<br />';
 
   foreach($folderContent as $content){
     $output .= $content . '<br />';
@@ -172,17 +176,26 @@ function _ftpgallery_galleryContentPreviewBilder($path){
 function ftpgallery_callback() {
   $form = ftpgallery_callback_helper();
 
-  $changed_elements = $form['dynamicContent'];
+//   $changed_elements = $form['dynamicContent'];
 
+  $output = _ftpgallery_galleryContentPreviewBilder($form['values']['galleryurl']);
   // Prevent duplicate wrappers.
-  unset($changed_elements['#prefix'], $changed_elements['#suffix']);
+//   unset($changed_elements['#prefix'], $changed_elements['#suffix']);
+// 
+//   $output = theme('status_messages') . drupal_render($changed_elements);
 
-  $output = theme('status_messages') . drupal_render($changed_elements);
-
-//   $output = 'my test output <br />' . $form['values']['galleryurl'];
+//   $output = 'my test output <br />' . $arg;
 
   drupal_json(array('status' => TRUE, 'data' => $output));
   exit();
+}
+
+function ftpgallery_continue($form, &$form_state) {
+  $values = $form_state['values'];
+  unset($form_state['submit_handlers']);
+  form_execute_handlers('submit', $form, $form_state);
+  $form_state['my_values'] = $values;
+  $form_state['rebuild'] = TRUE;
 }
 
 
