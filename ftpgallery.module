@@ -3,15 +3,6 @@
 require_once ( dirname(__FILE__) . '/ftpgallery.database.inc');
 require_once ( dirname(__FILE__) . '/ftpgallery.parser.inc');
 
-function ftpgallery_help($path, $arg) {
-  switch ($path) {
-    case 'admin/help#ftpgallery':
-      $output = '<p>' . t("Hello Help.") . '</p>';
- 
-      return $output;
-  }
-}
-
 function ftpgallery_node_info() {
   return array(
     'ftpgallery' => array(
@@ -21,6 +12,15 @@ function ftpgallery_node_info() {
     )
   );
 } 
+
+function ftpgallery_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#ftpgallery':
+      $output = '<p>' . t("Hello Help.") . '</p>';
+
+      return $output;
+  }
+}
 
 function ftpgallery_init() {
   // Add the Stylesheet
@@ -66,14 +66,6 @@ function ftpgallery_menu() {
     'file' => 'ftpgallery.admin.inc',
    );
 
-  // callback for the dynamic ahah form
-  $items['ftpgallery/createform/updatefolder'] = array(
-    'page callback' => 'ftpgallery_callback',
-//     'page arguments' => array(2),
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-  );
-
   return $items;
 }
 
@@ -103,10 +95,6 @@ function ftpgallery_form(&$node, $form_state) {
     '#required' => TRUE,
     '#options' => drupal_map_assoc(_ftpgallery_readFolders( variable_get('ftpgallery_gallerybasedir', 'files') )),
     '#default_value' => isset($node->galleryurl) ? $node->galleryurl : 0,
-    '#ahah' => array(
-      'path' => 'ftpgallery/createform/updatefolder',
-      'wrapper' => 'dynamic-Content',
-    ),
     '#attributes' => array('class' => 'gallery-Id'),
     '#weight' => -1,
   );
@@ -119,16 +107,9 @@ function ftpgallery_form(&$node, $form_state) {
     '#weight' => 0,
   );
 
-  $form['updateFolderContent'] = array(
-    '#type' => 'submit',
-    '#value' => t('Choose'),
-    '#attributes' => array('class' => 'next-button'),
-    '#submit' => array('ftpgallery_continue'),
-  );
-
   $content = empty($node->galleryurl) ? 
              '<div>test</div>' :
-             _ftpgallery_galleryContentPreviewBilder($form_state['values']['galleryurl']);
+             _ftpgallery_galleryContentPreviewBilder($node->galleryurl);
 
   $form['galleryContent'] = array(
     '#type' => 'markup',
@@ -152,7 +133,7 @@ function _ftpgallery_readFolders($scanPath){
   return $folderList;
 }
 
-function _ftpgallery_galleryContentPreviewBilder(){
+function _ftpgallery_galleryContentPreviewBilder($path){
 
   $folderContent = scandir( variable_get('ftpgallery_gallerybasedir', 'files') . '/' . $path );
 
@@ -167,55 +148,6 @@ function _ftpgallery_galleryContentPreviewBilder(){
 
   $output .= '</div>';
   return $output;
-}
-
-/**
- * This callback has nothing to do with the form itself, so just returns a bit
- * of HTML that will replace the existing markup in $form['box'].
- */
-function ftpgallery_callback() {
-  $form = ftpgallery_callback_helper();
-
-//   $changed_elements = $form['dynamicContent'];
-
-  $output = _ftpgallery_galleryContentPreviewBilder($form['values']['galleryurl']);
-  // Prevent duplicate wrappers.
-//   unset($changed_elements['#prefix'], $changed_elements['#suffix']);
-// 
-//   $output = theme('status_messages') . drupal_render($changed_elements);
-
-//   $output = 'my test output <br />' . $arg;
-
-  drupal_json(array('status' => TRUE, 'data' => $output));
-  exit();
-}
-
-function ftpgallery_continue($form, &$form_state) {
-  $values = $form_state['values'];
-  unset($form_state['submit_handlers']);
-  form_execute_handlers('submit', $form, $form_state);
-  $form_state['my_values'] = $values;
-  $form_state['rebuild'] = TRUE;
-}
-
-
-/**
- * Does the very standard things that must be done in any normal callback.
- * Used by each callback in this example module.
- */
-function ftpgallery_callback_helper() {
-  $form_state = array('storage' => NULL, 'submitted' => FALSE);
-  $form_build_id = $_POST['form_build_id'];
-  $form = form_get_cache($form_build_id, $form_state);
-  $args = $form['#parameters'];
-  $form_id = array_shift($args);
-  $form_state['post'] = $form['#post'] = $_POST;
-  // Enable the submit/validate handlers to determine whether AHAH-submittted.
-  $form_state['ahah_submission'] = TRUE;
-  $form['#programmed'] = $form['#redirect'] = FALSE;
-  drupal_process_form($form_id, $form, $form_state);
-  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
-  return $form;
 }
 
 function ftpgallery_nodeapi(&$node, $op, $teaser, $page) {
@@ -238,7 +170,7 @@ function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
     '#weight' => 1,
   );
 
-  $errors = drupal_get_messages( 'error', FALSE);
+  $errors = drupal_get_messages( 'error', FALSE );
   if( !empty($errors) && $page ){
     _ftpgallery_debug($node);
   }
