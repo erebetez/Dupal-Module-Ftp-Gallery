@@ -24,3 +24,12 @@ function ftpgallery_delete($node) {
 function ftpgallery_load($node) {
   return db_fetch_object(db_query('SELECT galleryurl, thumbid FROM {ftpgallery} WHERE vid = %d', $node->vid));
 }
+
+function ftpgallery_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+    case 'delete revision':
+      // Notice that we're matching a single revision based on the node's vid.
+      db_query('DELETE FROM {ftpgallery} WHERE vid = %d', $node->vid);
+      break;
+  }
+}

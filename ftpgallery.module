@@ -77,11 +77,19 @@ function ftpgallery_menu() {
 }
 
 function ftpgallery_callback($path){
-    form_set_error('debug01', t("got callback: %thumb",
-                     array('%thumb' => $path)));
-
   $output = _ftpgallery_galleryContentPreviewBilder($path);
   print $output;
+}
+
+function _ftpgallery_galleryContentPreviewBilder($path){
+
+  $folderContent = scandir( variable_get('ftpgallery_gallerybasedir', 'files') . '/' . $path );
+
+  foreach($folderContent as $content){
+    $output .= $content . '<br />';
+  }
+
+  return $output;
 }
 
 // --- The Form ---
@@ -120,7 +128,7 @@ function ftpgallery_form(&$node, $form_state) {
     '#weight' => 0,
   );
 
-  $content = empty($node->galleryurl) ? '' :
+  $content = empty($node->galleryurl) ? 'Preview Area' :
              _ftpgallery_galleryContentPreviewBilder($node->galleryurl);
 
   $form['galleryContent'] = array(
@@ -143,26 +151,6 @@ function _ftpgallery_readFolders($scanPath){
     }
   }
   return $folderList;
-}
-
-function _ftpgallery_galleryContentPreviewBilder($path){
-
-  $folderContent = scandir( variable_get('ftpgallery_gallerybasedir', 'files') . '/' . $path );
-
-  foreach($folderContent as $content){
-    $output .= $content . '<br />';
-  }
-
-  return $output;
-}
-
-function ftpgallery_nodeapi(&$node, $op, $teaser, $page) {
-  switch ($op) {
-    case 'delete revision':
-      // Notice that we're matching a single revision based on the node's vid.
-      db_query('DELETE FROM {ftpgallery} WHERE vid = %d', $node->vid);
-      break;
-  }
 }
 
 // --- Display ---
