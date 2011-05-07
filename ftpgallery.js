@@ -1,5 +1,6 @@
 
-
+// Simple javascript function that gets selected folder of the gallery path combobox and 
+// loads the calbackfunction that returns the content of that folder.
 Drupal.behaviors.galleryPathUpdate = function(context) {
 
   $('#edit-galleryurl').change(function() {

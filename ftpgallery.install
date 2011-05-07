@@ -1,15 +1,9 @@
 <?php
 
-/**
- * Implementation of hook_install().
- */
 function ftpgallery_install() {
   drupal_install_schema('ftpgallery');
 }
 
-/**
- * Implementation of hook_uninstall().
- */
 function ftpgallery_uninstall() {
   drupal_uninstall_schema('ftpgallery');
 }
@@ -28,8 +22,9 @@ function ftpgallery_schema() {
   return $schema;
 } 
 
-function ftpgallery_update_6000() {
-  $ret = array();
-  db_add_field($ret, 'ftpgallery', 'thumbid', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
-  return $ret;
-}
+// Just used wehn the schema needs an update
+// function ftpgallery_update_6000() {
+//  $ret = array();
+//  db_add_field($ret, 'ftpgallery', 'thumbid', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
+//  return $ret;
+//}

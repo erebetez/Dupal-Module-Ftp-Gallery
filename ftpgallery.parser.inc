@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Function to parse the pictures and thumbnails in the folder.
+ * Looks for thumbnails in a subfolder or with the prefix.
+ */
 function _ftpgallery_parseGalleryFolder($node) {
   $thumbnails = array();
   $pictures = array();
@@ -17,7 +21,7 @@ function _ftpgallery_parseGalleryFolder($node) {
       continue;
     }
 
-    $thumbnail = _ftpgallery_getThumbnail($fileName, $node->thumbid, $isThumbnailFolder);
+    $thumbnail = _ftpgallery_getThumbnailName($fileName, $node->thumbid, $isThumbnailFolder);
 
     if( _ftpgallery_galleryPathExists( $node, $thumbnail ) ){
       array_push($pictures, $fileName);
@@ -35,6 +39,7 @@ function _ftpgallery_parseGalleryFolder($node) {
   return $node;
 }
 
+/// This function checks if the thumbnail prefix is in fact a subfolder.
 function _ftpgallery_isThumbnailPrefixAFolder($node, $fileNameList){
    $thumbnailPrefix = "/^" . $node->thumbid . "$/";
    return (count(preg_grep($thumbnailPrefix, $fileNameList)) > 0);
@@ -52,16 +57,26 @@ function _ftpgallery_isValidFileType($fileName){
     }
   }
 
-//   drupal_set_message(t("%file is no valid filetype. Check the settings. ",
-//                        array('%file' => check_plain($fileName)), 'warning' ));
-
   return false;
 }
 
-function _ftpgallery_getThumbnail($fileName, $thumbnailPrefix, $isFolder = FALSE){
+function _ftpgallery_getThumbnailName($fileName, $thumbnailPrefix, $isFolder = FALSE){
   if( $isFolder ){
     return $thumbnailPrefix . "/" . $fileName;
   }
 
   return $thumbnailPrefix . $fileName;
+}
+
+
+/// Reads the content of a folder and returns an array with only the folders.
+function _ftpgallery_readFolders($scanPath){
+  $fileNameList = scandir( $scanPath );
+  $folderList = array();
+  foreach( $fileNameList as $file ){
+    if( !is_dir($file) ){
+      array_push($folderList, $file);
+    }
+  }
+  return $folderList;
 }

@@ -8,7 +8,7 @@ function ftpgallery_node_info() {
     'ftpgallery' => array(
       'name' => t('FTP-Gallery'),
       'module' => 'ftpgallery',
-      'description' => "Creates a Gallery out of a folder.",
+      'description' => t("Creates a gallery out of a folder that is located on the server."),
     )
   );
 } 
@@ -16,7 +16,14 @@ function ftpgallery_node_info() {
 function ftpgallery_help($path, $arg) {
   switch ($path) {
     case 'admin/help#ftpgallery':
-      $output = '<p>' . t("Hello Help.") . '</p>';
+      $output .= '<p>' . t("This module parses a folder from the server an shows the pictures as a gallery in the node. ");
+      $output .= t("A new content type, FTP-Gallery, is provided to setup a new node."). '</p>';
+      $output .= '<h2>' . t("Thumbnails") . '</h2>';
+      $output .= '<p>' . t("The thumbnails must also be located in the folder with a prefix or in a subfolder. ");
+      $output .= t("Pictures and thumbnails have to have the same filename."). '</p>';
+      $output .= '<h2>' . t("Settings") . '</h2>';
+      $output .= '<p>' . t("Allowed file types: All filetypes that do not match the suffix configured in this settns are filterd out. ") . '</p>';
+      $output .= '<p>' . t("The base directory is there where all gallerys should be located. The folders in this directory are shown in the form when a new FTP-Gallery is created.") . '</p>';
 
       return $output;
   }
@@ -25,7 +32,7 @@ function ftpgallery_help($path, $arg) {
 function ftpgallery_init() {
   // Add the Stylesheet
   drupal_add_css(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.css');
-
+  // Add some javascirpt code.
   drupal_add_js(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.js');
 }
 
@@ -56,6 +63,7 @@ function ftpgallery_access($op, $node, $account) {
 function ftpgallery_menu() {
   $items = array();
 
+  // The menu entry for the admin page
   $items['admin/settings/ftpgallery'] = array(
     'title' => t('FTP Gallery module settings'),
     'description' => t('Settings for the FTP Gallery module.'),
@@ -76,11 +84,19 @@ function ftpgallery_menu() {
   return $items;
 }
 
+/// callback function is triggered with the ftpgallery/ahah/callback path.
 function ftpgallery_callback($path){
-  $output = _ftpgallery_galleryContentPreviewBilder($path);
+  $baseDir = variable_get('ftpgallery_gallerybasedir', 'files');
+
+  // check if the given path realy exists. The path could be manualy typed in the browser.
+  if( file_exists( getcwd() . "/" . $baseDir . "/" . $path) ){
+    $output = _ftpgallery_galleryContentPreviewBilder($path);
+  }
+
   print $output;
 }
 
+/// scanns the given folder and return a html list. Only used to return ajax query.
 function _ftpgallery_galleryContentPreviewBilder($path){
 
   $folderContent = scandir( variable_get('ftpgallery_gallerybasedir', 'files') . '/' . $path );
@@ -142,17 +158,6 @@ function ftpgallery_form(&$node, $form_state) {
   return $form;
 }
 
-function _ftpgallery_readFolders($scanPath){
-  $fileNameList = scandir( $scanPath );
-  $folderList = array();
-  foreach( $fileNameList as $file ){
-    if( !is_dir($file) ){
-      array_push($folderList, $file);
-    }
-  }
-  return $folderList;
-}
-
 // --- Display ---
 function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
   $node = node_prepare($node, $teaser);
@@ -199,6 +204,7 @@ function _ftpgallery_galleryPathExists($node, $file = ''){
   return file_exists( getcwd() . "/" . _ftpgallery_galleryPath($node) . $file );
 }
 
+/// return the current gallery paht for the node.
 function _ftpgallery_galleryPath($node){
   $baseDir = variable_get('ftpgallery_gallerybasedir', 'files');
   return $baseDir . "/" . $node->galleryurl . "/";
@@ -216,6 +222,7 @@ function ftpgallery_theme() {
   );
 }
 
+/// The theme function for showing the gallery.
 function theme_ftpgallery_gallery($node) {
   $output = '<div class="ftpgallery_gallery">';
   $galleryPath = _ftpgallery_galleryPath($node);
@@ -233,6 +240,8 @@ function theme_ftpgallery_gallery($node) {
   return $output;
 }
 
+/// Returns a themed thumnail image with the link on the original image.
+/// Also includes attributes used by the lightbox script.
 function theme_ftpgallery_formatLightboxImage($pictureUrl, $thumbnailUrl, $lightboxGroup, $alt='', $title='' , $attributes = NULL){
     $output .= '<a href="' . $pictureUrl . '" ';
 
@@ -249,7 +258,7 @@ function theme_ftpgallery_formatLightboxImage($pictureUrl, $thumbnailUrl, $light
 }
 
 
-// Add some debug information, when somthing goes wrong.
+/// Add some debug information, when somthing goes wrong.
 function _ftpgallery_debug($node) {
   drupal_set_message(t(" *** Debug info *** "), 'error');
 
