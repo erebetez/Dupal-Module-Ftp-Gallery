@@ -1,4 +1,23 @@
 <?php
+/***********************************************************************************
+* Drupal Module: FTP-Gallery
+* Copyright (C) 2011 Etienne Rebetez, etienne.rebetez@oberwallis.ch
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*
+***********************************************************************************/
 
 // --- Database hooks ---
 
@@ -25,6 +44,7 @@ function ftpgallery_load($node) {
   return db_fetch_object(db_query('SELECT galleryurl, thumbid FROM {ftpgallery} WHERE vid = %d', $node->vid));
 }
 
+// The node api is only used for database realated stuff at the moment.
 function ftpgallery_nodeapi(&$node, $op, $teaser, $page) {
   switch ($op) {
     case 'delete revision':
