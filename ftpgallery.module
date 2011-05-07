@@ -26,7 +26,7 @@ function ftpgallery_init() {
   // Add the Stylesheet
   drupal_add_css(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.css');
 
-//   drupal_add_js(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.js');
+  drupal_add_js(drupal_get_path('module', 'ftpgallery') .'/ftpgallery.js');
 }
 
 function ftpgallery_perm() {
@@ -66,9 +66,23 @@ function ftpgallery_menu() {
     'file' => 'ftpgallery.admin.inc',
    );
 
+  // callback for the dynamic ahah form
+  $items['ftpgallery/ahah/callback'] = array(
+    'page callback' => 'ftpgallery_callback',
+    'access callback' => TRUE,
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
+function ftpgallery_callback($path){
+    form_set_error('debug01', t("got callback: %thumb",
+                     array('%thumb' => $path)));
+
+  $output = _ftpgallery_galleryContentPreviewBilder($path);
+  print $output;
+}
 
 // --- The Form ---
 function ftpgallery_form(&$node, $form_state) {
@@ -95,7 +109,6 @@ function ftpgallery_form(&$node, $form_state) {
     '#required' => TRUE,
     '#options' => drupal_map_assoc(_ftpgallery_readFolders( variable_get('ftpgallery_gallerybasedir', 'files') )),
     '#default_value' => isset($node->galleryurl) ? $node->galleryurl : 0,
-    '#attributes' => array('class' => 'gallery-Id'),
     '#weight' => -1,
   );
 
@@ -107,8 +120,7 @@ function ftpgallery_form(&$node, $form_state) {
     '#weight' => 0,
   );
 
-  $content = empty($node->galleryurl) ? 
-             '<div>test</div>' :
+  $content = empty($node->galleryurl) ? '' :
              _ftpgallery_galleryContentPreviewBilder($node->galleryurl);
 
   $form['galleryContent'] = array(
@@ -137,16 +149,10 @@ function _ftpgallery_galleryContentPreviewBilder($path){
 
   $folderContent = scandir( variable_get('ftpgallery_gallerybasedir', 'files') . '/' . $path );
 
-  $output = '<div>' ;
-  $output .= 'path: ' . $path . '<br />';
-  $output .= 'form: ' . $form['values']['galleryurl'] . '<br />';
-  $output .= 'formmy: ' . $form['my_values']['galleryurl'] . '<br />';
-
   foreach($folderContent as $content){
     $output .= $content . '<br />';
   }
 
-  $output .= '</div>';
   return $output;
 }
 
