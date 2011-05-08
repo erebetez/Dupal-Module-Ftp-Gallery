@@ -119,10 +119,6 @@ function ftpgallery_form(&$node, $form_state) {
     );
   }
 
-  if ($type->has_body) {
-    $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
-  }
-
   $form['galleryurl'] = array(
     '#type' => 'select',
     '#title' => t('Path to Folder'),
@@ -151,6 +147,10 @@ function ftpgallery_form(&$node, $form_state) {
     '#value' => $content,
     '#weight' => 0,
   );
+
+  if ($type->has_body) {
+    $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
+  }
 
   return $form;
 }

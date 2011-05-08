@@ -90,8 +90,13 @@ function _ftpgallery_getThumbnailName($fileName, $thumbnailPrefix, $isFolder = F
 
 /// Reads the content of a folder and returns an array with only the folders.
 function _ftpgallery_readFolders($scanPath){
-  $fileNameList = scandir( $scanPath );
   $folderList = array();
+
+  if( !file_exists($scanPath) ){
+    return $folderList;
+  }
+
+  $fileNameList = scandir( $scanPath );
   foreach( $fileNameList as $file ){
     if( !is_dir($file) ){
       array_push($folderList, $file);
