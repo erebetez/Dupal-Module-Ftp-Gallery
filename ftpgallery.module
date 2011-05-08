@@ -103,31 +103,9 @@ function ftpgallery_menu() {
   return $items;
 }
 
-/// callback function is triggered with the ftpgallery/ahah/callback path.
-function ftpgallery_callback($path){
-  $baseDir = variable_get('ftpgallery_gallerybasedir', 'files');
-
-  // check if the given path realy exists. The path could be manualy typed in the browser.
-  if( file_exists( getcwd() . "/" . $baseDir . "/" . $path) ){
-    $output = _ftpgallery_galleryContentPreviewBilder($path);
-  }
-
-  print $output;
-}
-
-/// scanns the given folder and return a html list. Only used to return ajax query.
-function _ftpgallery_galleryContentPreviewBilder($path){
-
-  $folderContent = scandir( variable_get('ftpgallery_gallerybasedir', 'files') . '/' . $path );
-
-  foreach($folderContent as $content){
-    $output .= $content . '<br />';
-  }
-
-  return $output;
-}
 
 // --- The Form ---
+
 function ftpgallery_form(&$node, $form_state) {
   $type = node_get_types('type', $node);
 
@@ -177,7 +155,32 @@ function ftpgallery_form(&$node, $form_state) {
   return $form;
 }
 
+/// callback function is triggered with the ftpgallery/ahah/callback path.
+function ftpgallery_callback($path){
+  $output = _ftpgallery_galleryContentPreviewBilder($path);
+
+  // ajax puts the output directly in the tag selected by jQuerry.
+  print $output;
+}
+
+/// scanns the given folder and return a html list. Only used to return ajax query.
+function _ftpgallery_galleryContentPreviewBilder($path){
+  $folderContent = _ftpgallery_readFolders( variable_get('ftpgallery_gallerybasedir', 'files') . '/' . $path );
+
+  if( empty($folderContent) ){
+    return t("Folder is empty.");
+  }
+
+  foreach($folderContent as $content){
+    $output .= $content . '<br />';
+  }
+
+  return $output;
+}
+
+
 // --- Display ---
+
 function ftpgallery_view($node, $teaser = FALSE, $page = FALSE) {
   $node = node_prepare($node, $teaser);
 
